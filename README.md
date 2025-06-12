@@ -1,23 +1,23 @@
-# JMON - JSON Musical Object Notation
+# jmon
 
-A declarative, JSON-based format for representing musical compositions with comprehensive synthesis and audio processing capabilities.
-
-## What is JMON?
-
-JMON (JSON Musical Object Notation) is a musical notation format that allows you to write music using JSON. It's designed to be:
+jmon (JSON Musical Object Notation) is a musical notation format that allows you to write music using JSON. It's designed to be:
 
 - **Readable**: Musical compositions written in familiar JSON syntax
 - **Comprehensive**: Supports complex synthesizers, effects chains, and musical structures
 - **Universal**: Backend-agnostic format that can target multiple audio frameworks
 - **Extensible**: Easy to add new synthesizer types and effects
 
-## What is jmon-tone.js?
+## jmon-tone.js
 
-`jmon-tone.js` is a converter library that translates JMON files into [Tone.js](https://tonejs.github.io/) format for web audio playback. It handles all the complexity of converting JMON's musical notation into audio synthesis instructions.
+`jmon-tone.js` is a converter library that translates JMON files into [Tone.js](https://tonejs.github.io/) format for web audio playback. It handles all the complexity of converting jmon's musical notation into audio synthesis instructions.
 
-## Quick Example
+## other synthetizer?
 
-Here's a simple JMON composition:
+Although based on Tone.js capabiilties, jmon is an agnostic format. We will first focus on jmon-tone.js, but if everything goes smoothly, we intend to support other formats like SuperCollider.
+
+## Example
+
+Here's a simple jmon composition:
 
 ```json
 {
@@ -75,7 +75,7 @@ Here's a simple JMON composition:
 
 ## Getting Started
 
-1. **Write your music** in JMON format (see `porcelain.json` for a complete example)
+1. **Write your music** in jmon format (see `porcelain.json` for a complete example)
 2. **Convert to Tone.js** using jmon-tone.js:
 
 ```javascript
@@ -100,7 +100,7 @@ if (!validation.success) {
 - `jmon.md` - Complete technical specification of the JMON format
 - `jmon-tone.js` - Converter library for Tone.js compatibility
 - `porcelain.json` - Comprehensive demo composition showcasing all features
-- `LICENSE` - MIT License
+- `LICENSE` - GPL3 License
 
 ## Future Roadmap
 
@@ -112,6 +112,7 @@ JMON is designed for extensibility. Planned converter libraries include:
 ## Contributing
 
 Contributions welcome! Whether it's:
+- General structure
 - New synthesizer types
 - Additional effect implementations
 - Backend converters for other audio frameworks
@@ -120,4 +121,4 @@ Contributions welcome! Whether it's:
 
 ## License
 
-MIT License - see LICENSE file for details.
+GPL3 License - see LICENSE file for details.
