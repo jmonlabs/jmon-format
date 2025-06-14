@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "JMON Composition Corrected",
+  "title": "JMON Composition (Multi-Track)",
   "type": "object",
   "required": [
     "format",
@@ -8,7 +8,7 @@
     "bpm",
     "audioGraph",
     "connections",
-    "sequence"
+    "sequences"
   ],
   "properties": {
     "format": {
@@ -131,95 +131,138 @@
         }
       }
     },
-    "sequence": {
-      "type": "object",
-      "required": [
-        "notes"
-      ],
-      "properties": {
-        "notes": {
-          "type": "array",
-          "items": {
+    "sequences": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "label",
+          "notes"
+        ],
+        "properties": {
+          "label": {
+            "type": "string"
+          },
+          "synth": {
             "type": "object",
             "required": [
-              "note",
-              "time",
-              "duration"
+              "type"
             ],
             "properties": {
-              "note": {
-                "oneOf": [
-                  {
-                    "type": "string"
-                  },
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "array",
-                    "items": {
-                      "oneOf": [
-                        {
-                          "type": "string"
-                        },
-                        {
-                          "type": "number"
-                        }
-                      ]
-                    }
-                  }
-                ]
-              },
-              "time": {
-                "oneOf": [
-                  {
-                    "type": "string"
-                  },
-                  {
-                    "type": "number"
-                  }
-                ]
-              },
-              "duration": {
-                "oneOf": [
-                  {
-                    "type": "string"
-                  },
-                  {
-                    "type": "number"
-                  }
-                ]
-              },
-              "velocity": {
-                "type": "number",
-                "minimum": 0,
-                "maximum": 1
-              },
-              "articulation": {
+              "type": {
                 "type": "string"
               },
-              "microtuning": {
-                "type": "number"
+              "options": {
+                "type": "object"
               }
             },
             "additionalProperties": false
+          },
+          "synthRef": {
+            "type": "string"
+          },
+          "notes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "note",
+                "time",
+                "duration"
+              ],
+              "properties": {
+                "note": {
+                  "oneOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "array",
+                      "items": {
+                        "oneOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "number"
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                },
+                "time": {
+                  "oneOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "number"
+                    }
+                  ]
+                },
+                "duration": {
+                  "oneOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "number"
+                    }
+                  ]
+                },
+                "velocity": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "articulation": {
+                  "type": "string"
+                },
+                "microtuning": {
+                  "type": "number"
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "loop": {
+            "oneOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "loopEnd": {
+            "type": "string"
+          },
+          "effects": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "type"
+              ],
+              "properties": {
+                "type": {
+                  "type": "string"
+                },
+                "options": {
+                  "type": "object"
+                }
+              },
+              "additionalProperties": false
+            }
           }
         },
-        "loop": {
-          "oneOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "type": "string"
-            }
-          ]
-        },
-        "loopEnd": {
-          "type": "string"
-        }
-      },
-      "additionalProperties": false
+        "additionalProperties": false
+      }
     },
     "automation": {
       "type": "array",
@@ -246,6 +289,33 @@
           },
           "value": {
             "type": "number"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "timeSignatureMap": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "time",
+          "timeSignature"
+        ],
+        "properties": {
+          "time": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              }
+            ]
+          },
+          "timeSignature": {
+            "type": "string",
+            "pattern": "^\\d+/\\d+$"
           }
         },
         "additionalProperties": false
