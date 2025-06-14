@@ -1,5 +1,6 @@
+{
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "JMON Composition Extended",
+  "title": "JMON Composition Corrected",
   "type": "object",
   "required": [
     "format",
@@ -133,22 +134,43 @@
     "sequence": {
       "type": "object",
       "required": [
-        "notes",
-        "duration",
-        "time"
+        "notes"
       ],
       "properties": {
         "notes": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "number"
-            },
-            {
-              "type": "array",
-              "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "note",
+              "time",
+              "duration"
+            ],
+            "properties": {
+              "note": {
+                "oneOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "array",
+                    "items": {
+                      "oneOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "number"
+                        }
+                      ]
+                    }
+                  }
+                ]
+              },
+              "time": {
                 "oneOf": [
                   {
                     "type": "string"
@@ -157,40 +179,31 @@
                     "type": "number"
                   }
                 ]
+              },
+              "duration": {
+                "oneOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "velocity": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              },
+              "articulation": {
+                "type": "string"
+              },
+              "microtuning": {
+                "type": "number"
               }
-            }
-          ]
-        },
-        "duration": {
-          "oneOf": [
-            {
-              "type": "string"
             },
-            {
-              "type": "number"
-            }
-          ]
-        },
-        "time": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "number"
-            }
-          ]
-        },
-        "velocity": {
-          "type": "number",
-          "minimum": 0,
-          "maximum": 1
-        },
-        "articulation": {
-          "type": "string"
-        },
-        "microtuning": {
-          "type": "number"
+            "additionalProperties": false
+          }
         },
         "loop": {
           "oneOf": [
