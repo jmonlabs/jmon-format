@@ -1,0 +1,243 @@
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "JMON Composition Extended",
+  "type": "object",
+  "required": [
+    "format",
+    "version",
+    "bpm",
+    "audioGraph",
+    "connections",
+    "sequence"
+  ],
+  "properties": {
+    "format": {
+      "type": "string",
+      "const": "jmonTone"
+    },
+    "version": {
+      "type": "string"
+    },
+    "bpm": {
+      "type": "number",
+      "minimum": 20,
+      "maximum": 400
+    },
+    "timeSignature": {
+      "type": "string",
+      "pattern": "^\\d+/\\d+$"
+    },
+    "tempoMap": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "time",
+          "bpm"
+        ],
+        "properties": {
+          "time": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              }
+            ]
+          },
+          "bpm": {
+            "type": "number",
+            "minimum": 20,
+            "maximum": 400
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "transport": {
+      "type": "object",
+      "properties": {
+        "startOffset": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "number"
+            }
+          ]
+        },
+        "globalLoop": {
+          "type": "boolean"
+        },
+        "globalLoopEnd": {
+          "type": "string"
+        },
+        "swing": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "author": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "audioGraph": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "type",
+          "options"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "options": {
+            "type": "object"
+          },
+          "target": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "connections": {
+      "type": "array",
+      "items": {
+        "type": "array",
+        "minItems": 2,
+        "maxItems": 2,
+        "items": {
+          "type": "string"
+        }
+      }
+    },
+    "sequence": {
+      "type": "object",
+      "required": [
+        "notes",
+        "duration",
+        "time"
+      ],
+      "properties": {
+        "notes": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "array",
+              "items": {
+                "oneOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "duration": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "number"
+            }
+          ]
+        },
+        "time": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "number"
+            }
+          ]
+        },
+        "velocity": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "articulation": {
+          "type": "string"
+        },
+        "microtuning": {
+          "type": "number"
+        },
+        "loop": {
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string"
+            }
+          ]
+        },
+        "loopEnd": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "automation": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "target",
+          "time",
+          "value"
+        ],
+        "properties": {
+          "target": {
+            "type": "string"
+          },
+          "time": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              }
+            ]
+          },
+          "value": {
+            "type": "number"
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}
