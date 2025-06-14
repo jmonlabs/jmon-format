@@ -1,6 +1,6 @@
 # JMON: JSON Musical Object Notation
 
-JMON (JSON Musical Object Notation) is a declarative, backend-agnostic JSON format for describing musical compositions, synthesizers, audio graphs, effects, automation, and note sequences. It is designed to serve as an intermediate format between algorithmic generators (e.g., Djalgo) and audio synthesis frameworks (e.g., Tone.js).
+JMON (JSON Musical Object Notation) is a declarative, backend-agnostic JSON format for describing musical compositions, synthesizers, audio graphs, effects, automation, and note sequences. It is designed as an intermediate format between algorithmic generators (e.g., Djalgo) and audio synthesis frameworks (e.g., Tone.js).
 
 ## Features
 
@@ -28,9 +28,11 @@ JMON (JSON Musical Object Notation) is a declarative, backend-agnostic JSON form
     ["reverb1", "destination"]
   ],
   "sequence": {
-    "notes": ["C4", "E4", "G4"],
-    "duration": "2n",
-    "time": 0,
+    "notes": [
+      { "note": "C4", "time": "0:0", "duration": "4n", "velocity": 0.8 },
+      { "note": "E4", "time": "0:1", "duration": "4n", "velocity": 0.8 },
+      { "note": "G4", "time": "0:2", "duration": "4n", "velocity": 0.8 }
+    ],
     "loop": true,
     "loopEnd": "4m"
   },
@@ -57,7 +59,7 @@ JMON (JSON Musical Object Notation) is a declarative, backend-agnostic JSON form
 | `metadata` | Composition metadata |
 | `audioGraph` | Synths, effects, modulators |
 | `connections` | Signal routing |
-| `sequence` | Notes and timing |
+| `sequence` | Contains `notes`, `loop`, `loopEnd` |
 | `automation` | Parameter automation |
 
 ## Usage
