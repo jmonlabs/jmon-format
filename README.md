@@ -1,5 +1,5 @@
 
-# jmon: JSON Musical Object Notation
+# jmon: JSON Musical Object Notation (pre-alpha)
 
 **jmon** (JSON Musical Object Notation) is a declarative, backend-agnostic JSON format for multi-track musical compositions, modular audio graphs, effects, automation, looping, and advanced timing.
 
@@ -13,7 +13,7 @@
 - Complex parallel/serial signal graphs
 - Extensible for creative music coding and DAWs
 
-- **Full Documentation:** [jmon_specification_full.md](jmon_specification_full.md)
-- **Schema:** [jmon_schema_multitrack.json](jmon_schema_multitrack.json)
+- **Schema:** [jmon_schema.json](jmon_schema.json)
+- **Documentation:** not yet available
 
 See docs for detailed examples of per-sequence and global effects, samplers, and all features.
