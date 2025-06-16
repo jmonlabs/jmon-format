@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "JMON Composition (Multi-Track)",
-  "description": "A declarative music format supporting synthesis, MIDI, and score notation, including support for MIDI channels and modulations.",
+  "title": "JMON Composition (Multi-Track, Extended)",
+  "description": "A declarative music format supporting synthesis, MIDI, score notation, key changes, arbitrary metadata, annotations, and custom presets.",
   "type": "object",
   "required": [
     "format",
@@ -27,6 +27,34 @@
       "maximum": 400,
       "description": "Tempo in beats per minute."
     },
+    "keySignature": {
+      "type": "string",
+      "pattern": "^[A-G](#|b)?m?$",
+      "description": "Key signature (e.g., 'C', 'Am', 'F#')."
+    },
+    "keySignatureMap": {
+      "type": "array",
+      "description": "Map of key signature changes over time.",
+      "items": {
+        "type": "object",
+        "required": ["time", "keySignature"],
+        "properties": {
+          "time": {
+            "oneOf": [
+              { "type": "string" },
+              { "type": "number" }
+            ],
+            "description": "Time of the key signature change."
+          },
+          "keySignature": {
+            "type": "string",
+            "pattern": "^[A-G](#|b)?m?$",
+            "description": "New key signature at this time."
+          }
+        },
+        "additionalProperties": false
+      }
+    },
     "timeSignature": {
       "type": "string",
       "pattern": "^\\d+/\\d+$",
@@ -37,10 +65,7 @@
       "description": "Map of tempo changes over time.",
       "items": {
         "type": "object",
-        "required": [
-          "time",
-          "bpm"
-        ],
+        "required": ["time", "bpm"],
         "properties": {
           "time": {
             "oneOf": [
@@ -89,7 +114,7 @@
     },
     "metadata": {
       "type": "object",
-      "description": "Metadata for the composition.",
+      "description": "Metadata for the composition, allowing arbitrary fields.",
       "properties": {
         "name": {
           "type": "string",
@@ -100,18 +125,37 @@
           "description": "Author or composer."
         }
       },
-      "additionalProperties": false
+      "additionalProperties": true
+    },
+    "customPresets": {
+      "type": "array",
+      "description": "Array of custom user-defined presets for synths or effects.",
+      "items": {
+        "type": "object",
+        "required": ["id", "type", "options"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for this preset."
+          },
+          "type": {
+            "type": "string",
+            "description": "Type of preset (e.g., 'Synth', 'Effect', 'Sampler')."
+          },
+          "options": {
+            "type": "object",
+            "description": "Preset options."
+          }
+        },
+        "additionalProperties": false
+      }
     },
     "audioGraph": {
       "type": "array",
       "description": "Audio node graph for synthesis.",
       "items": {
         "type": "object",
-        "required": [
-          "id",
-          "type",
-          "options"
-        ],
+        "required": ["id", "type", "options"],
         "properties": {
           "id": {
             "type": "string",
@@ -128,6 +172,10 @@
           "target": {
             "type": "string",
             "description": "Target node for audio routing."
+          },
+          "presetRef": {
+            "type": "string",
+            "description": "Reference to a custom preset."
           }
         },
         "additionalProperties": false
@@ -150,10 +198,7 @@
       "description": "Musical sequences (tracks or parts).",
       "items": {
         "type": "object",
-        "required": [
-          "label",
-          "notes"
-        ],
+        "required": ["label", "notes"],
         "properties": {
           "label": {
             "type": "string",
@@ -167,9 +212,7 @@
           },
           "synth": {
             "type": "object",
-            "required": [
-              "type"
-            ],
+            "required": ["type"],
             "properties": {
               "type": {
                 "type": "string",
@@ -178,6 +221,10 @@
               "options": {
                 "type": "object",
                 "description": "Synthesizer options."
+              },
+              "presetRef": {
+                "type": "string",
+                "description": "Reference to a custom preset."
               }
             },
             "additionalProperties": false,
@@ -192,11 +239,7 @@
             "description": "Array of note events.",
             "items": {
               "type": "object",
-              "required": [
-                "note",
-                "time",
-                "duration"
-              ],
+              "required": ["note", "time", "duration"],
               "properties": {
                 "note": {
                   "oneOf": [
@@ -251,11 +294,11 @@
                   "description": "Per-note modulation events (CC, pitch bend, aftertouch).",
                   "items": {
                     "type": "object",
-                    "required": [ "type", "value", "time" ],
+                    "required": ["type", "value", "time"],
                     "properties": {
                       "type": {
                         "type": "string",
-                        "enum": [ "cc", "pitchBend", "aftertouch" ],
+                        "enum": ["cc", "pitchBend", "aftertouch"],
                         "description": "Type of MIDI modulation event."
                       },
                       "controller": {
@@ -297,9 +340,7 @@
             "description": "Sequence-level effects.",
             "items": {
               "type": "object",
-              "required": [
-                "type"
-              ],
+              "required": ["type"],
               "properties": {
                 "type": {
                   "type": "string",
@@ -308,6 +349,10 @@
                 "options": {
                   "type": "object",
                   "description": "Options for this effect."
+                },
+                "presetRef": {
+                  "type": "string",
+                  "description": "Reference to a custom preset."
                 }
               },
               "additionalProperties": false
@@ -342,15 +387,44 @@
         "additionalProperties": false
       }
     },
+    "annotations": {
+      "type": "array",
+      "description": "Annotations (e.g., lyrics, rehearsal marks, comments) in the composition.",
+      "items": {
+        "type": "object",
+        "required": ["text", "time"],
+        "properties": {
+          "text": {
+            "type": "string",
+            "description": "Annotation text (e.g., lyric, instruction, label)."
+          },
+          "time": {
+            "oneOf": [
+              { "type": "string", "description": "Musical time (e.g., '1:2:0')." },
+              { "type": "number", "description": "Absolute time in seconds." }
+            ]
+          },
+          "type": {
+            "type": "string",
+            "description": "Type of annotation (e.g., 'lyric', 'marker', 'comment', 'rehearsal')."
+          },
+          "duration": {
+            "oneOf": [
+              { "type": "string", "description": "Musical duration." },
+              { "type": "number", "description": "Duration in seconds." }
+            ],
+            "description": "Optional duration for annotation (e.g., for lyrics or extended comments)."
+          }
+        },
+        "additionalProperties": false
+      }
+    },
     "timeSignatureMap": {
       "type": "array",
       "description": "Map of time signature changes over time.",
       "items": {
         "type": "object",
-        "required": [
-          "time",
-          "timeSignature"
-        ],
+        "required": ["time", "timeSignature"],
         "properties": {
           "time": {
             "oneOf": [
