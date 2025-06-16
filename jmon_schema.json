@@ -1,6 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "JMON Composition (Multi-Track)",
+  "description": "A declarative music format supporting synthesis, MIDI, and score notation, including support for MIDI channels and modulations.",
   "type": "object",
   "required": [
     "format",
@@ -13,22 +14,27 @@
   "properties": {
     "format": {
       "type": "string",
-      "const": "jmonTone"
+      "const": "jmonTone",
+      "description": "The format identifier for the JMON schema."
     },
     "version": {
-      "type": "string"
+      "type": "string",
+      "description": "JMON schema version."
     },
     "bpm": {
       "type": "number",
       "minimum": 20,
-      "maximum": 400
+      "maximum": 400,
+      "description": "Tempo in beats per minute."
     },
     "timeSignature": {
       "type": "string",
-      "pattern": "^\\d+/\\d+$"
+      "pattern": "^\\d+/\\d+$",
+      "description": "Time signature for the composition (e.g., '4/4')."
     },
     "tempoMap": {
       "type": "array",
+      "description": "Map of tempo changes over time.",
       "items": {
         "type": "object",
         "required": [
@@ -38,18 +44,16 @@
         "properties": {
           "time": {
             "oneOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "number"
-              }
-            ]
+              { "type": "string" },
+              { "type": "number" }
+            ],
+            "description": "The time point for the tempo change."
           },
           "bpm": {
             "type": "number",
             "minimum": 20,
-            "maximum": 400
+            "maximum": 400,
+            "description": "Tempo in beats per minute at this time point."
           }
         },
         "additionalProperties": false
@@ -57,45 +61,50 @@
     },
     "transport": {
       "type": "object",
+      "description": "Settings controlling global playback and looping.",
       "properties": {
         "startOffset": {
           "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "number"
-            }
-          ]
+            { "type": "string" },
+            { "type": "number" }
+          ],
+          "description": "Offset for when playback should start."
         },
         "globalLoop": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "Whether the entire project should loop."
         },
         "globalLoopEnd": {
-          "type": "string"
+          "type": "string",
+          "description": "Where (in time) the global loop should end."
         },
         "swing": {
           "type": "number",
           "minimum": 0,
-          "maximum": 1
+          "maximum": 1,
+          "description": "Swing amount (0-1)."
         }
       },
       "additionalProperties": false
     },
     "metadata": {
       "type": "object",
+      "description": "Metadata for the composition.",
       "properties": {
         "name": {
-          "type": "string"
+          "type": "string",
+          "description": "Name of the composition."
         },
         "author": {
-          "type": "string"
+          "type": "string",
+          "description": "Author or composer."
         }
       },
       "additionalProperties": false
     },
     "audioGraph": {
       "type": "array",
+      "description": "Audio node graph for synthesis.",
       "items": {
         "type": "object",
         "required": [
@@ -105,16 +114,20 @@
         ],
         "properties": {
           "id": {
-            "type": "string"
+            "type": "string",
+            "description": "Unique identifier for this node."
           },
           "type": {
-            "type": "string"
+            "type": "string",
+            "description": "Type of node (e.g., Synth, Filter, etc.)."
           },
           "options": {
-            "type": "object"
+            "type": "object",
+            "description": "Options for this node."
           },
           "target": {
-            "type": "string"
+            "type": "string",
+            "description": "Target node for audio routing."
           }
         },
         "additionalProperties": false
@@ -122,6 +135,7 @@
     },
     "connections": {
       "type": "array",
+      "description": "Array of audio graph connections. Each is a two-element array [source, target].",
       "items": {
         "type": "array",
         "minItems": 2,
@@ -133,6 +147,7 @@
     },
     "sequences": {
       "type": "array",
+      "description": "Musical sequences (tracks or parts).",
       "items": {
         "type": "object",
         "required": [
@@ -141,7 +156,14 @@
         ],
         "properties": {
           "label": {
-            "type": "string"
+            "type": "string",
+            "description": "Label for this sequence (e.g., 'lead', 'bass', etc.)."
+          },
+          "midiChannel": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 15,
+            "description": "Default MIDI channel for this sequence (0-15)."
           },
           "synth": {
             "type": "object",
@@ -150,19 +172,24 @@
             ],
             "properties": {
               "type": {
-                "type": "string"
+                "type": "string",
+                "description": "Type of synthesizer (e.g., 'Synth', 'AMSynth')."
               },
               "options": {
-                "type": "object"
+                "type": "object",
+                "description": "Synthesizer options."
               }
             },
-            "additionalProperties": false
+            "additionalProperties": false,
+            "description": "Synthesizer definition for this sequence."
           },
           "synthRef": {
-            "type": "string"
+            "type": "string",
+            "description": "Reference to an audioGraph node to use as the synth."
           },
           "notes": {
             "type": "array",
+            "description": "Array of note events.",
             "items": {
               "type": "object",
               "required": [
@@ -173,22 +200,15 @@
               "properties": {
                 "note": {
                   "oneOf": [
-                    {
-                      "type": "string"
-                    },
-                    {
-                      "type": "number"
-                    },
+                    { "type": "string", "description": "Note name (e.g., 'C4', 'G#3')." },
+                    { "type": "number", "description": "MIDI note number." },
                     {
                       "type": "array",
+                      "description": "Chord (array of note names or MIDI numbers).",
                       "items": {
                         "oneOf": [
-                          {
-                            "type": "string"
-                          },
-                          {
-                            "type": "number"
-                          }
+                          { "type": "string" },
+                          { "type": "number" }
                         ]
                       }
                     }
@@ -196,34 +216,66 @@
                 },
                 "time": {
                   "oneOf": [
-                    {
-                      "type": "string"
-                    },
-                    {
-                      "type": "number"
-                    }
+                    { "type": "string", "description": "Musical time (e.g., '0:2:0', '4n')." },
+                    { "type": "number", "description": "Absolute time in seconds." }
                   ]
                 },
                 "duration": {
                   "oneOf": [
-                    {
-                      "type": "string"
-                    },
-                    {
-                      "type": "number"
-                    }
+                    { "type": "string", "description": "Musical duration (e.g., '8n', '1:0:0')." },
+                    { "type": "number", "description": "Duration in seconds." }
                   ]
                 },
                 "velocity": {
                   "type": "number",
                   "minimum": 0,
-                  "maximum": 1
+                  "maximum": 1,
+                  "description": "Note velocity (0-1)."
                 },
                 "articulation": {
-                  "type": "string"
+                  "type": "string",
+                  "description": "Articulation (e.g., 'staccato', 'accent')."
                 },
                 "microtuning": {
-                  "type": "number"
+                  "type": "number",
+                  "description": "Microtuning adjustment in semitones."
+                },
+                "channel": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 15,
+                  "description": "Override sequence MIDI channel for this note (0-15)."
+                },
+                "modulations": {
+                  "type": "array",
+                  "description": "Per-note modulation events (CC, pitch bend, aftertouch).",
+                  "items": {
+                    "type": "object",
+                    "required": [ "type", "value", "time" ],
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "enum": [ "cc", "pitchBend", "aftertouch" ],
+                        "description": "Type of MIDI modulation event."
+                      },
+                      "controller": {
+                        "type": "integer",
+                        "description": "MIDI CC number (required for type: 'cc')."
+                      },
+                      "value": {
+                        "type": "number",
+                        "description": "Value for this modulation (0-127 for CC, -8192 to 8191 for pitchBend, usually 0-127 for aftertouch)."
+                      },
+                      "time": {
+                        "oneOf": [
+                          { "type": "string", "description": "Relative time (e.g., '8n')." },
+                          { "type": "number", "description": "Relative time in seconds." }
+                        ],
+                        "description": "When this modulation event happens (relative to note start)."
+                      }
+                    },
+                    "additionalProperties": false
+                  }
                 }
               },
               "additionalProperties": false
@@ -231,19 +283,18 @@
           },
           "loop": {
             "oneOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "string"
-              }
-            ]
+              { "type": "boolean" },
+              { "type": "string" }
+            ],
+            "description": "Whether this sequence loops, or string for musical duration."
           },
           "loopEnd": {
-            "type": "string"
+            "type": "string",
+            "description": "Time (musical or seconds) to end the loop."
           },
           "effects": {
             "type": "array",
+            "description": "Sequence-level effects.",
             "items": {
               "type": "object",
               "required": [
@@ -251,10 +302,12 @@
               ],
               "properties": {
                 "type": {
-                  "type": "string"
+                  "type": "string",
+                  "description": "Type of effect (e.g., 'Reverb', 'Delay')."
                 },
                 "options": {
-                  "type": "object"
+                  "type": "object",
+                  "description": "Options for this effect."
                 }
               },
               "additionalProperties": false
@@ -266,29 +319,24 @@
     },
     "automation": {
       "type": "array",
+      "description": "Automation events for parameters, including synth, effect, or MIDI modulation.",
       "items": {
         "type": "object",
-        "required": [
-          "target",
-          "time",
-          "value"
-        ],
+        "required": [ "target", "time", "value" ],
         "properties": {
           "target": {
-            "type": "string"
+            "type": "string",
+            "description": "Parameter to automate, e.g., 'synth.frequency', 'effect.mix', 'midi.cc1', 'midi.pitchBend', 'midi.aftertouch'."
           },
           "time": {
             "oneOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "number"
-              }
+              { "type": "string", "description": "Musical time (e.g., '2:1:0')." },
+              { "type": "number", "description": "Absolute time in seconds." }
             ]
           },
           "value": {
-            "type": "number"
+            "type": "number",
+            "description": "Target value for the parameter."
           }
         },
         "additionalProperties": false
@@ -296,6 +344,7 @@
     },
     "timeSignatureMap": {
       "type": "array",
+      "description": "Map of time signature changes over time.",
       "items": {
         "type": "object",
         "required": [
@@ -305,17 +354,15 @@
         "properties": {
           "time": {
             "oneOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "number"
-              }
-            ]
+              { "type": "string" },
+              { "type": "number" }
+            ],
+            "description": "Time of the time signature change."
           },
           "timeSignature": {
             "type": "string",
-            "pattern": "^\\d+/\\d+$"
+            "pattern": "^\\d+/\\d+$",
+            "description": "New time signature at this time."
           }
         },
         "additionalProperties": false
