@@ -14,6 +14,4 @@
 - Extensible for creative music coding and DAWs
 
 - **Schema:** [jmon_schema.json](jmon_schema.json)
-- **Documentation:** not yet available
-
-See docs for detailed examples of per-sequence and global effects, samplers, and all features.
+- **Documentation:** not yet available.
