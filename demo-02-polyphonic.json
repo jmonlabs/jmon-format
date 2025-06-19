@@ -1,0 +1,34 @@
+{
+    "format": "jmonTone",
+    "version": "1.0",
+    "bpm": 90,
+    "metadata": {
+        "name": "Polyphonic Chords Demo",
+        "description": "PolySynth with chord progressions and harmonies"
+    },
+    "audioGraph": [
+        { "id": "master", "type": "Destination", "options": {} },
+        { "id": "polySynth", "type": "PolySynth", "options": {
+            "polyphony": 8,
+            "voice": {
+                "oscillator": { "type": "sawtooth" },
+                "envelope": { "attack": 0.02, "decay": 0.1, "sustain": 0.3, "release": 1.2 }
+            }
+        }}
+    ],
+    "connections": [
+        ["polySynth", "master"]
+    ],
+    "sequences": [
+        {
+            "label": "Chord Progression",
+            "synthRef": "polySynth",
+            "notes": [
+                { "note": ["C4", "E4", "G4"], "time": 0, "duration": 1, "velocity": 0.7 },
+                { "note": ["F4", "A4", "C5"], "time": 1, "duration": 1, "velocity": 0.8 },
+                { "note": ["G4", "B4", "D5"], "time": 2, "duration": 1, "velocity": 0.6 },
+                { "note": ["C4", "E4", "G4", "C5"], "time": 3, "duration": 2, "velocity": 0.9 }
+            ]
+        }
+    ]
+}

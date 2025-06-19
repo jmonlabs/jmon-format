@@ -1,0 +1,52 @@
+{
+    "format": "jmonTone",
+    "version": "1.0",
+    "bpm": 80,
+    "metadata": {
+        "name": "Vibrato Modulation Demo",
+        "description": "CC1 controlling vibrato depth and frequency"
+    },
+    "converterHints": {
+        "tone": {
+            "cc1": { "target": "vibrato", "frequency": 6, "depthRange": [-50, 50] }
+        }
+    },
+    "audioGraph": [
+        { "id": "master", "type": "Destination", "options": {} },
+        { "id": "vibratoSynth", "type": "Synth", "options": {
+            "oscillator": { "type": "sine" },
+            "envelope": { "attack": 0.1, "decay": 0.1, "sustain": 0.9, "release": 1.5 }
+        }}
+    ],
+    "connections": [
+        ["vibratoSynth", "master"]
+    ],
+    "sequences": [
+        {
+            "label": "Vibrato Melody",
+            "synthRef": "vibratoSynth",
+            "notes": [
+                {
+                    "note": "E4",
+                    "time": 0,
+                    "duration": 3,
+                    "velocity": 0.8,
+                    "modulations": [
+                        { "type": "cc", "controller": 1, "value": 0, "time": 0 },
+                        { "type": "cc", "controller": 1, "value": 127, "time": 2 }
+                    ]
+                },
+                {
+                    "note": "A4",
+                    "time": 3,
+                    "duration": 3,
+                    "velocity": 0.9,
+                    "modulations": [
+                        { "type": "cc", "controller": 1, "value": 100, "time": 0 },
+                        { "type": "cc", "controller": 1, "value": 20, "time": 2.5 }
+                    ]
+                }
+            ]
+        }
+    ]
+}

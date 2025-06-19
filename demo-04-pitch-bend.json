@@ -1,0 +1,49 @@
+{
+    "format": "jmonTone",
+    "version": "1.0",
+    "bpm": 100,
+    "metadata": {
+        "name": "Pitch Bend Demo",
+        "description": "Pitch bend wheel creating expressive pitch slides"
+    },
+    "audioGraph": [
+        { "id": "master", "type": "Destination", "options": {} },
+        { "id": "leadSynth", "type": "MonoSynth", "options": {
+            "oscillator": { "type": "square" },
+            "envelope": { "attack": 0.01, "decay": 0.1, "sustain": 0.8, "release": 0.4 },
+            "portamento": 0.1
+        }}
+    ],
+    "connections": [
+        ["leadSynth", "master"]
+    ],
+    "sequences": [
+        {
+            "label": "Expressive Lead",
+            "synthRef": "leadSynth",
+            "notes": [
+                {
+                    "note": "G4",
+                    "time": 0,
+                    "duration": 2,
+                    "velocity": 0.9,
+                    "modulations": [
+                        { "type": "pitchBend", "value": 0, "time": 0 },
+                        { "type": "pitchBend", "value": 4096, "time": 1.5 },
+                        { "type": "pitchBend", "value": 0, "time": 2 }
+                    ]
+                },
+                {
+                    "note": "C5",
+                    "time": 2.5,
+                    "duration": 1.5,
+                    "velocity": 0.8,
+                    "modulations": [
+                        { "type": "pitchBend", "value": 0, "time": 0 },
+                        { "type": "pitchBend", "value": -2048, "time": 1 }
+                    ]
+                }
+            ]
+        }
+    ]
+}

@@ -1,0 +1,32 @@
+{
+    "format": "jmonTone",
+    "version": "1.0",
+    "bpm": 120,
+    "metadata": {
+        "name": "Basic Synthesizer Demo",
+        "description": "Simple monophonic synthesizer with basic envelope"
+    },
+    "audioGraph": [
+        { "id": "master", "type": "Destination", "options": {} },
+        { "id": "basicSynth", "type": "Synth", "options": {
+            "oscillator": { "type": "sine" },
+            "envelope": { "attack": 0.1, "decay": 0.2, "sustain": 0.5, "release": 0.8 }
+        }}
+    ],
+    "connections": [
+        ["basicSynth", "master"]
+    ],
+    "sequences": [
+        {
+            "label": "Simple Melody",
+            "synthRef": "basicSynth",
+            "notes": [
+                { "note": "C4", "time": 0, "duration": 0.5, "velocity": 0.8 },
+                { "note": "D4", "time": 0.5, "duration": 0.5, "velocity": 0.7 },
+                { "note": "E4", "time": 1, "duration": 0.5, "velocity": 0.9 },
+                { "note": "F4", "time": 1.5, "duration": 0.5, "velocity": 0.6 },
+                { "note": "G4", "time": 2, "duration": 1, "velocity": 1.0 }
+            ]
+        }
+    ]
+}

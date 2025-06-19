@@ -1,0 +1,41 @@
+{
+    "format": "jmonTone",
+    "version": "1.0",
+    "bpm": 130,
+    "metadata": {
+        "name": "FM Synthesis Demo",
+        "description": "FMSynth with modulation index automation"
+    },
+    "audioGraph": [
+        { "id": "master", "type": "Destination", "options": {} },
+        { "id": "fmSynth", "type": "FMSynth", "options": {
+            "harmonicity": 3,
+            "modulationIndex": 5,
+            "modulation": { "type": "sine" },
+            "carrier": { "type": "sine" },
+            "envelope": { "attack": 0.01, "decay": 0.1, "sustain": 0.3, "release": 0.5 },
+            "modulationEnvelope": { "attack": 0.02, "decay": 0.2, "sustain": 0.1, "release": 0.3 }
+        }}
+    ],
+    "connections": [
+        ["fmSynth", "master"]
+    ],
+    "automation": [
+        { "target": "synth.modulationIndex", "time": 0, "value": 2 },
+        { "target": "synth.modulationIndex", "time": 2, "value": 15 },
+        { "target": "synth.modulationIndex", "time": 4, "value": 8 }
+    ],
+    "sequences": [
+        {
+            "label": "FM Bass",
+            "synthRef": "fmSynth",
+            "notes": [
+                { "note": "E2", "time": 0, "duration": 0.5, "velocity": 0.8 },
+                { "note": "E2", "time": 1, "duration": 0.5, "velocity": 0.6 },
+                { "note": "G2", "time": 2, "duration": 0.5, "velocity": 0.9 },
+                { "note": "A2", "time": 3, "duration": 0.5, "velocity": 0.7 },
+                { "note": "E2", "time": 4, "duration": 1, "velocity": 1.0 }
+            ]
+        }
+    ]
+}

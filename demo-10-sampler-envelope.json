@@ -1,0 +1,55 @@
+{
+    "format": "jmonTone",
+    "version": "1.0",
+    "bpm": 90,
+    "metadata": {
+        "name": "Sampler with Auto-Envelope",
+        "description": "Sampler with automatic envelope to prevent abrupt cuts"
+    },
+    "synthConfig": {
+        "type": "Sampler",
+        "options": {
+            "envelope": {
+                "enabled": true,
+                "attack": 0.01,
+                "decay": 0.1,
+                "sustain": 0.8,
+                "release": 0.5
+            }
+        }
+    },
+    "audioGraph": [
+        { "id": "master", "type": "Destination", "options": {} },
+        { "id": "trumpetSampler", "type": "Sampler", "options": {
+            "urls": {
+                "C4": "20231__mtg__trumpet-single-notes-played-badly/247164__mtg__overall-quality-of-single-note-trumpet-c4.wav",
+                "D4": "20231__mtg__trumpet-single-notes-played-badly/247162__mtg__overall-quality-of-single-note-trumpet-d4.wav",
+                "E4": "20231__mtg__trumpet-single-notes-played-badly/247161__mtg__overall-quality-of-single-note-trumpet-e4.wav",
+                "F4": "20231__mtg__trumpet-single-notes-played-badly/247159__mtg__overall-quality-of-single-note-trumpet-f4.wav",
+                "G4": "20231__mtg__trumpet-single-notes-played-badly/247157__mtg__overall-quality-of-single-note-trumpet-g4.wav"
+            },
+            "envelope": {
+                "attack": 0.01,
+                "decay": 0.05,
+                "sustain": 0.9,
+                "release": 0.8
+            }
+        }}
+    ],
+    "connections": [
+        ["trumpetSampler", "master"]
+    ],
+    "sequences": [
+        {
+            "label": "Trumpet Melody",
+            "synthRef": "trumpetSampler",
+            "notes": [
+                { "note": "C4", "time": 0, "duration": 0.5, "velocity": 0.8 },
+                { "note": "D4", "time": 0.5, "duration": 0.5, "velocity": 0.7 },
+                { "note": "E4", "time": 1, "duration": 0.75, "velocity": 0.9 },
+                { "note": "F4", "time": 2, "duration": 0.5, "velocity": 0.6 },
+                { "note": "G4", "time": 2.5, "duration": 1.5, "velocity": 1.0 }
+            ]
+        }
+    ]
+}

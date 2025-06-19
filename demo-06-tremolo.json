@@ -1,0 +1,52 @@
+{
+    "format": "jmonTone",
+    "version": "1.0",
+    "bpm": 95,
+    "metadata": {
+        "name": "Tremolo Effect Demo",
+        "description": "CC11 controlling tremolo depth for amplitude modulation"
+    },
+    "converterHints": {
+        "tone": {
+            "cc11": { "target": "tremolo", "frequency": 4, "depthRange": [0, 0.8] }
+        }
+    },
+    "audioGraph": [
+        { "id": "master", "type": "Destination", "options": {} },
+        { "id": "tremoloSynth", "type": "Synth", "options": {
+            "oscillator": { "type": "triangle" },
+            "envelope": { "attack": 0.02, "decay": 0.1, "sustain": 0.7, "release": 0.8 }
+        }}
+    ],
+    "connections": [
+        ["tremoloSynth", "master"]
+    ],
+    "sequences": [
+        {
+            "label": "Tremolo Pads",
+            "synthRef": "tremoloSynth",
+            "notes": [
+                {
+                    "note": "C4",
+                    "time": 0,
+                    "duration": 4,
+                    "velocity": 0.7,
+                    "modulations": [
+                        { "type": "cc", "controller": 11, "value": 0, "time": 0 },
+                        { "type": "cc", "controller": 11, "value": 100, "time": 2 }
+                    ]
+                },
+                {
+                    "note": "G4",
+                    "time": 4,
+                    "duration": 4,
+                    "velocity": 0.8,
+                    "modulations": [
+                        { "type": "cc", "controller": 11, "value": 80, "time": 0 },
+                        { "type": "cc", "controller": 11, "value": 20, "time": 3 }
+                    ]
+                }
+            ]
+        }
+    ]
+}

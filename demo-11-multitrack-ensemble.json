@@ -1,0 +1,102 @@
+{
+    "format": "jmonTone",
+    "version": "1.0",
+    "bpm": 100,
+    "metadata": {
+        "name": "Multivariate Ensemble",
+        "description": "Multiple synths, tracks, and modulations working together"
+    },
+    "converterHints": {
+        "tone": {
+            "cc1": { "target": "filter", "depthRange": [300, 3000] },
+            "cc11": { "target": "tremolo", "frequency": 4, "depthRange": [0, 0.6] },
+            "cc74": { "target": "filter", "depthRange": [100, 8000] }
+        }
+    },
+    "audioGraph": [
+        { "id": "master", "type": "Destination", "options": {} },
+        { "id": "leadSynth", "type": "MonoSynth", "options": {
+            "oscillator": { "type": "sawtooth" },
+            "filter": { "type": "lowpass", "frequency": 1000, "Q": 8 },
+            "envelope": { "attack": 0.01, "decay": 0.1, "sustain": 0.4, "release": 0.6 }
+        }},
+        { "id": "padSynth", "type": "PolySynth", "options": {
+            "polyphony": 6,
+            "voice": {
+                "oscillator": { "type": "triangle" },
+                "envelope": { "attack": 0.5, "decay": 0.2, "sustain": 0.8, "release": 2.0 }
+            }
+        }},
+        { "id": "bassSynth", "type": "FMSynth", "options": {
+            "harmonicity": 2,
+            "modulationIndex": 8,
+            "envelope": { "attack": 0.01, "decay": 0.2, "sustain": 0.3, "release": 0.8 }
+        }}
+    ],
+    "connections": [
+        ["leadSynth", "master"],
+        ["padSynth", "master"],
+        ["bassSynth", "master"]
+    ],
+    "sequences": [
+        {
+            "label": "Lead Melody",
+            "synthRef": "leadSynth",
+            "midiChannel": 0,
+            "notes": [
+                {
+                    "note": "C5",
+                    "time": 0,
+                    "duration": 1,
+                    "velocity": 0.8,
+                    "modulations": [
+                        { "type": "cc", "controller": 74, "value": 40, "time": 0 },
+                        { "type": "cc", "controller": 74, "value": 100, "time": 0.8 }
+                    ]
+                },
+                { "note": "D5", "time": 1, "duration": 0.5, "velocity": 0.7 },
+                {
+                    "note": "E5",
+                    "time": 1.5,
+                    "duration": 1.5,
+                    "velocity": 0.9,
+                    "modulations": [
+                        { "type": "pitchBend", "value": 0, "time": 0 },
+                        { "type": "pitchBend", "value": 2048, "time": 1 }
+                    ]
+                }
+            ]
+        },
+        {
+            "label": "Harmonic Pad",
+            "synthRef": "padSynth",
+            "midiChannel": 1,
+            "notes": [
+                {
+                    "note": ["C4", "E4", "G4"],
+                    "time": 0,
+                    "duration": 3,
+                    "velocity": 0.5,
+                    "modulations": [
+                        { "type": "cc", "controller": 11, "value": 0, "time": 0 },
+                        { "type": "cc", "controller": 11, "value": 80, "time": 2 }
+                    ]
+                }
+            ]
+        },
+        {
+            "label": "Bass Line",
+            "synthRef": "bassSynth",
+            "midiChannel": 2,
+            "notes": [
+                { "note": "C2", "time": 0, "duration": 1, "velocity": 0.7 },
+                { "note": "G2", "time": 1, "duration": 1, "velocity": 0.6 },
+                { "note": "A2", "time": 2, "duration": 1, "velocity": 0.8 }
+            ]
+        }
+    ],
+    "automation": [
+        { "target": "leadSynth.filter.frequency", "time": 2, "value": 2000 },
+        { "target": "bassSynth.modulationIndex", "time": 1.5, "value": 12 }
+    ]
+}

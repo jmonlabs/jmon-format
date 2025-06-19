@@ -1,0 +1,41 @@
+{
+    "format": "jmonTone",
+    "version": "1.0",
+    "bpm": 115,
+    "metadata": {
+        "name": "DuoSynth Demo",
+        "description": "DuoSynth with two oscillators and built-in vibrato"
+    },
+    "audioGraph": [
+        { "id": "master", "type": "Destination", "options": {} },
+        { "id": "duoSynth", "type": "DuoSynth", "options": {
+            "voice0": {
+                "oscillator": { "type": "sawtooth" },
+                "envelope": { "attack": 0.01, "decay": 0.2, "sustain": 0.5, "release": 0.8 }
+            },
+            "voice1": {
+                "oscillator": { "type": "sine" },
+                "envelope": { "attack": 0.05, "decay": 0.1, "sustain": 0.7, "release": 1.2 }
+            },
+            "harmonicity": 1.5,
+            "vibratoAmount": 0.1,
+            "vibratoRate": 5
+        }}
+    ],
+    "connections": [
+        ["duoSynth", "master"]
+    ],
+    "sequences": [
+        {
+            "label": "Duo Lead",
+            "synthRef": "duoSynth",
+            "notes": [
+                { "note": "C5", "time": 0, "duration": 1, "velocity": 0.8 },
+                { "note": "D5", "time": 1, "duration": 0.5, "velocity": 0.7 },
+                { "note": "E5", "time": 1.5, "duration": 0.5, "velocity": 0.9 },
+                { "note": "F5", "time": 2, "duration": 1.5, "velocity": 0.6 },
+                { "note": "G5", "time": 3.5, "duration": 2, "velocity": 1.0 }
+            ]
+        }
+    ]
+}
