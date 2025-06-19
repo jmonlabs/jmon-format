@@ -2,6 +2,13 @@
 
 **jmon** (JSON Musical Object Notation) is a declarative, backend-agnostic JSON format for multi-track musical compositions, modular audio graphs, effects, automation, looping, and advanced timing.
 
+## To do
+
+[ ] Revise effect processing (delay, reverb, chorus, etc.)
+[ ] Revise tremolo (audibly not working)
+[ ] Clarify relation between synthConfig and audioGraph
+[ ] Add a demo with full composition
+
 ## Key Features
 
 ### Core Structure
