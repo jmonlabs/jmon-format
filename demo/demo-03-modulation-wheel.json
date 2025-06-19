@@ -1,0 +1,49 @@
+{
+    "format": "jmonTone",
+    "version": "1.0",
+    "bpm": 110,
+    "metadata": {
+        "name": "Modulation Wheel Demo",
+        "description": "CC1 modulation wheel controlling filter frequency"
+    },
+    "converterHints": {
+        "tone": {
+            "cc1": { "target": "filterEffect", "parameter": "frequency", "depthRange": [200, 4000] }
+        }
+    },
+    "audioGraph": [
+        { "id": "master", "type": "Destination", "options": {} },
+        { "id": "modSynth", "type": "Synth", "options": {
+            "oscillator": { "type": "sawtooth" },
+            "envelope": { "attack": 0.01, "decay": 0.2, "sustain": 0.4, "release": 0.6 }
+        }},
+        { "id": "filterEffect", "type": "Filter", "options": {
+            "type": "lowpass",
+            "frequency": 800,
+            "Q": 5
+        }}
+    ],
+    "connections": [
+        ["modSynth", "filterEffect"],
+        ["filterEffect", "master"]
+    ],
+    "sequences": [
+        {
+            "label": "Filter Sweep",
+            "synthRef": "modSynth",
+            "notes": [
+                {
+                    "note": "A3",
+                    "time": 0,
+                    "duration": 4,
+                    "velocity": 0.8,
+                    "modulations": [
+                        { "type": "cc", "controller": 1, "value": 0, "time": 0 },
+                        { "type": "cc", "controller": 1, "value": 127, "time": 3 },
+                        { "type": "cc", "controller": 1, "value": 64, "time": 4 }
+                    ]
+                }
+            ]
+        }
+    ]
+}

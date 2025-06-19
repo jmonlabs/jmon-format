@@ -338,7 +338,10 @@ class jmonTone {
             annotations: jsonData.annotations || [],
             globalEffects: this.convertGlobalEffects(jsonData.globalEffects),
             sequences: jsonData.sequences.map(seq => {
-                const convertedSynth = this.convertSynthFormat(seq.synth, seq.synthRef, jsonData.audioGraph);
+                // Only support synthRef to audioGraph nodes
+                if (!seq.synthRef) {
+                    throw new Error(`Sequence "${seq.label}" missing synthRef. All sequences must reference audioGraph nodes.`);
+                }
                 
                 return {
                     label: seq.label || "Untitled Track",
@@ -347,7 +350,7 @@ class jmonTone {
                     loopEnd: seq.loopEnd,
                     // NEW: MIDI channel support
                     midiChannel: seq.midiChannel,
-                    synth: convertedSynth,
+                    synthRef: seq.synthRef, // Only store the reference
                     effects: this.processEffectsChain(seq.effects || convertedSynth.effects),
                     notes: seq.notes.map(note => this.convertNoteFormat(note))
                 };
@@ -363,111 +366,7 @@ class jmonTone {
         return toneFormat;
     }
 
-    /**
-     * Convert synth configuration to Tone.js format (NEW: with synthRef support)
-     * @param {Object} synthConfig - Synth configuration from JSON
-     * @param {String} synthRef - Reference to audioGraph node
-     * @param {Array} audioGraph - Audio graph nodes for reference lookup
-     * @returns {Object} Tone.js compatible synth config
-     */
-    static convertSynthFormat(synthConfig, synthRef, audioGraph) {
-        // NEW: Handle synthRef (reference to audioGraph node)
-        if (synthRef && audioGraph) {
-            const referencedNode = audioGraph.find(node => node.id === synthRef);
-            if (referencedNode) {
-                console.log(`🔗 jmonTone: Using synthRef "${synthRef}" from audioGraph`);
-                return {
-                    type: referencedNode.type,
-                    ...referencedNode.options,
-                    synthRef: synthRef // Keep reference for later use
-                };
-            } else {
-                console.warn(`⚠️  jmonTone: synthRef "${synthRef}" not found in audioGraph`);
-            }
-        }
-
-        if (!synthConfig) {
-            return { type: 'Synth' };
-        }
-
-        const converted = {
-            type: synthConfig.type || 'Synth'
-        };
-
-        // NEW: Handle preset references
-        if (synthConfig.presetRef) {
-            converted.presetRef = synthConfig.presetRef;
-        }
-
-        // Handle different synth types with their specific properties
-        switch (synthConfig.type) {
-            case 'PolySynth':
-                if (synthConfig.voice) converted.voice = synthConfig.voice;
-                if (synthConfig.polyphony) converted.polyphony = synthConfig.polyphony;
-                if (synthConfig.maxPolyphony) converted.maxPolyphony = synthConfig.maxPolyphony;
-                break;
-            
-            case 'MonoSynth':
-                if (synthConfig.portamento) converted.portamento = synthConfig.portamento;
-                break;
-            
-            case 'AMSynth':
-                if (synthConfig.modulation) converted.modulation = synthConfig.modulation;
-                if (synthConfig.modulationEnvelope) converted.modulationEnvelope = synthConfig.modulationEnvelope;
-                break;
-            
-            case 'FMSynth':
-                if (synthConfig.modulationIndex) converted.modulationIndex = synthConfig.modulationIndex;
-                if (synthConfig.harmonicity) converted.harmonicity = synthConfig.harmonicity;
-                if (synthConfig.modulation) converted.modulation = synthConfig.modulation;
-                if (synthConfig.modulationEnvelope) converted.modulationEnvelope = synthConfig.modulationEnvelope;
-                break;
-            
-            case 'DuoSynth':
-                if (synthConfig.voice0) converted.voice0 = synthConfig.voice0;
-                if (synthConfig.voice1) converted.voice1 = synthConfig.voice1;
-                if (synthConfig.harmonicity) converted.harmonicity = synthConfig.harmonicity;
-                if (synthConfig.vibratoAmount) converted.vibratoAmount = synthConfig.vibratoAmount;
-                if (synthConfig.vibratoRate) converted.vibratoRate = synthConfig.vibratoRate;
-                break;
-            
-            case 'PluckSynth':
-                if (synthConfig.attackNoise) converted.attackNoise = synthConfig.attackNoise;
-                if (synthConfig.dampening) converted.dampening = synthConfig.dampening;
-                if (synthConfig.resonance) converted.resonance = synthConfig.resonance;
-                break;
-            
-            case 'NoiseSynth':
-                if (synthConfig.noise) converted.noise = synthConfig.noise;
-                break;
-
-            case 'Sampler':
-                if (synthConfig.urls) converted.urls = synthConfig.urls;
-                if (synthConfig.baseUrl) converted.baseUrl = synthConfig.baseUrl;
-                if (synthConfig.attack) converted.attack = synthConfig.attack;
-                if (synthConfig.release) converted.release = synthConfig.release;
-                if (synthConfig.curve) converted.curve = synthConfig.curve;
-                break;
-        }
-
-        // Common properties for all synths
-        if (synthConfig.oscillator) converted.oscillator = synthConfig.oscillator;
-        if (synthConfig.envelope) converted.envelope = synthConfig.envelope;
-        if (synthConfig.filter) converted.filter = synthConfig.filter;
-        if (synthConfig.filterEnvelope) converted.filterEnvelope = synthConfig.filterEnvelope;
-        
-        // NEW: Include options from schema
-        if (synthConfig.options) {
-            Object.assign(converted, synthConfig.options);
-        }
-        
-        // Store effects separately for processing
-        if (synthConfig.effects) converted.effects = synthConfig.effects;
-
-        console.log(`🎛️ jmonTone: Converted ${synthConfig.type} synth with ${synthConfig.effects?.length || 0} effects`);
-        return converted;
-    }
-
+    
     /**
      * Convert note format to ensure compatibility (NEW: with MIDI and modulation support)
      * @param {Object} note - Note object from JSON
@@ -1273,10 +1172,21 @@ class jmonTone {
                                 mapped.toneValue = (norm - 0.5) * (hint?.depthRange?.[1] || 200) * 2; // cents
                                 break;
                             case 'filter':
-                            default:
                                 const minF = hint?.depthRange?.[0] || 200;
                                 const maxF = hint?.depthRange?.[1] || 4000;
                                 mapped.toneValue = minF * Math.pow(maxF / minF, norm);
+                                break;
+                            default:
+                                // Check if target is an effect node ID
+                                if (hint?.parameter && hint?.depthRange) {
+                                    const minVal = hint.depthRange[0] || 0;
+                                    const maxVal = hint.depthRange[1] || 1;
+                                    mapped.toneValue = minVal + norm * (maxVal - minVal);
+                                    mapped.toneParameter = hint.parameter;
+                                } else {
+                                    console.warn(`CC${mod.controller} requires depthRange and parameter in hints for target: ${hint?.target}`);
+                                    mapped.toneValue = norm; // Default normalized value
+                                }
                         }
                         break;
                         
@@ -1446,8 +1356,8 @@ class jmonTone {
                     synthMap.set(node.id, fallbackSynth);
                     console.log(`Created fallback Synth for ${node.id}`);
                 }
-            } else if (node.type !== 'Destination') {
-                // Handle other synth types
+            } else if (node.type !== 'Destination' && !this.isEffectNode(node.type)) {
+                // Handle other synth types (exclude effects)
                 try {
                     let synth;
                     const synthOptions = node.options || {};
@@ -1495,40 +1405,74 @@ class jmonTone {
             }
         }
         
-        // Set up audio connections and effects
-        const isSampler = synthConfig.type === 'Sampler';
-        let filter, tremoloEffect;
+        // Create effects from audioGraph
+        const effectsMap = new Map();
         
-        if (Object.values(toneHints).some(h => h.target === 'filter')) {
-            const allMax = Object.values(toneHints)
-                .filter(h => h.target === 'filter')
-                .map(h => h.depthRange?.[1] || 4000);
-            const initF = Math.max(...allMax, 200);
-            filter = new Tone.Filter(initF, 'lowpass', { Q: 10 }).toDestination();
-        }
-        
-        if (isSampler && Object.values(toneHints).some(h => h.target === 'tremolo')) {
-            const tremoloHint = Object.values(toneHints).find(h => h.target === 'tremolo');
-            tremoloEffect = new Tone.Tremolo(tremoloHint.frequency || 4, 0.5).start();
-            console.log('Global tremolo effect created');
-        }
-        
-        // Connect each synth to the audio chain
-        synthMap.forEach((synth, nodeId) => {
-            const synthType = synth.constructor.name || 'Synth';
-            
-            if (filter && tremoloEffect) {
-                synth.connect(tremoloEffect).connect(filter);
-            } else if (filter) {
-                synth.connect(filter);
-            } else if (tremoloEffect) {
-                synth.connect(tremoloEffect).toDestination();
-            } else {
-                synth.toDestination();
+        for (const node of composition.audioGraph || []) {
+            if (this.isEffectNode(node.type)) {
+                console.log(`Creating effect: ${node.id} (${node.type})`);
+                const effect = this.createEffect(node.type, node.options || {});
+                if (effect) {
+                    effectsMap.set(node.id, effect);
+                    console.log(`Effect ${node.id} created successfully`);
+                }
             }
-            
-            console.log(`Connected ${nodeId}: ${synthType}→${tremoloEffect ? 'Tremolo→' : ''}${filter ? 'Filter→' : ''}Destination`);
+        }
+        
+
+        
+        // Handle connections from audioGraph
+        const allNodes = new Map();
+        
+        // Add synths to nodes map
+        synthMap.forEach((synth, nodeId) => {
+            allNodes.set(nodeId, synth);
         });
+        
+        // Add effects to nodes map
+        effectsMap.forEach((effect, nodeId) => {
+            allNodes.set(nodeId, effect);
+        });
+        
+        // Add destination
+        allNodes.set('master', Tone.getDestination());
+        
+        // Process connections from audioGraph
+        if (composition.connections && composition.connections.length > 0) {
+            console.log(`Processing ${composition.connections.length} audio connections`);
+            
+            composition.connections.forEach((connection, index) => {
+                if (!Array.isArray(connection) || connection.length !== 2) {
+                    console.warn(`Invalid connection ${index}: ${JSON.stringify(connection)}`);
+                    return;
+                }
+                
+                const [sourceId, targetId] = connection;
+                const sourceNode = allNodes.get(sourceId);
+                const targetNode = allNodes.get(targetId);
+                
+                if (!sourceNode) {
+                    console.warn(`Source node not found: ${sourceId}`);
+                    return;
+                }
+                
+                if (!targetNode) {
+                    console.warn(`Target node not found: ${targetId}`);
+                    return;
+                }
+                
+                try {
+                    sourceNode.connect(targetNode);
+                    console.log(`Connected: ${sourceId} → ${targetId}`);
+                } catch (error) {
+                    console.error(`Failed to connect ${sourceId} → ${targetId}:`, error);
+                }
+            });
+        } else {
+            // Require connections to be defined in audioGraph
+            console.error('No connections defined in audioGraph. All synths must be connected to effects or destination.');
+            throw new Error('Missing audio graph connections. Please define connections in the audioGraph.');
+        }
         
         const now = Tone.now();
         
@@ -1640,6 +1584,35 @@ class jmonTone {
                         const norm = mod.value / 127;
                         const isSamplerType = synth.constructor.name === 'Sampler' || synth._buffer !== undefined;
                         
+                        // If hint.target refers to an effect node ID, handle it directly
+                        if (hint.target && effectsMap.has(hint.target)) {
+                            const effectNode = effectsMap.get(hint.target);
+                            const parameter = hint.parameter || 'frequency'; // default parameter
+                            const [minVal, maxVal] = hint.depthRange || [0, 1];
+                            const value = minVal + (maxVal - minVal) * norm;
+                            
+                            if (effectNode[parameter] && typeof effectNode[parameter].setValueAtTime === 'function') {
+                                effectNode[parameter].setValueAtTime(value, tm);
+                                console.log(`🎛️  CC${mod.controller} -> ${hint.target}.${parameter} = ${value.toFixed(3)} at ${tm.toFixed(2)}s`);
+                                
+                                // Handle ramping to next value of same type
+                                const nextMod = arr[i + 1];
+                                if (nextMod && nextMod.controller === mod.controller) {
+                                    const nextHint = toneHints[`cc${nextMod.controller}`] || {};
+                                    if (nextHint.target === hint.target && nextHint.parameter === parameter) {
+                                        const nextNorm = nextMod.value / 127;
+                                        const nextValue = minVal + (maxVal - minVal) * nextNorm;
+                                        const nextTime = now + nextMod.time;
+                                        effectNode[parameter].linearRampToValueAtTime(nextValue, nextTime);
+                                        console.log(`🎛️  CC${mod.controller} ramping to ${nextValue.toFixed(3)} at ${nextTime.toFixed(2)}s`);
+                                    }
+                                }
+                            } else {
+                                console.warn(`⚠️  Effect ${hint.target}.${parameter} parameter not found or not controllable`);
+                            }
+                            return; // Skip the legacy switch statement
+                        }
+                        
                         switch (hint.target) {
                             case 'vibrato': {
                                 if (isSamplerType) {
@@ -1675,40 +1648,25 @@ class jmonTone {
                                 break;
                             }
                             case 'tremolo': {
-                                if (isSamplerType && tremoloEffect) {
-                                    // Control tremolo depth for Samplers
-                                    const [mn = 0, mx = 1] = hint.depthRange || [0, 1];
-                                    const depth = mn + (mx - mn) * norm;
-                                    tremoloEffect.depth.setValueAtTime(depth, tm);
-                                    console.log(`Tremolo depth set to ${depth.toFixed(2)} at time ${tm.toFixed(2)}`);
-                                } else if (!isSamplerType) {
-                                    // For regular synths, create LFO connected to volume
-                                    const [mn = -12, mx = 0] = hint.depthRange || [-12, 0];
-                                    const lfo = new Tone.LFO(hint.frequency || 4, mn, mx);
-                                    if (synth.volume) {
-                                        lfo.connect(synth.volume);
-                                        lfo.start(tm);
-                                        lfo.stop(t0 + note.duration);
-                                    }
-                                } else {
-                                    console.warn(`⚠️  Tremolo effect not properly initialized for Sampler`);
-                                }
+                                console.warn(`⚠️  Legacy 'tremolo' target is deprecated. Use specific effect node IDs instead (e.g., 'tremoloEffect').`);
                                 break;
                             }
                             case 'filter': {
-                                if (filter) {
-                                    const [mn = 200, mx = 4000] = hint.depthRange || [200,4000];
-                                    const f = mn * Math.pow(mx / mn, norm);
-                                    filter.frequency.setValueAtTime(f, tm);
-                                    console.log(`🔧 Filter CC${mod.controller}: value=${mod.value} → frequency=${f.toFixed(0)}Hz at ${tm.toFixed(2)}s`);
-                                    const nxt = arr[i+1];
-                                    if (nxt) {
-                                        const f1 = mn * Math.pow(mx/mn, nxt.value/127);
-                                        filter.frequency.exponentialRampToValueAtTime(f1, now + nxt.time);
-                                        console.log(`🔧 Filter ramp to ${f1.toFixed(0)}Hz at ${(now + nxt.time).toFixed(2)}s`);
+                                console.warn(`⚠️  Legacy 'filter' target is deprecated. Use specific effect node IDs instead (e.g., 'filterEffect').`);
+                                break;
+                            }
+                            default: {
+                                // Fallback: if no specific target is defined, default to volume control
+                                if (!hint.target) {
+                                    console.warn(`CC${mod.controller} has no target defined in converterHints, defaulting to volume control`);
+                                    // Apply volume modulation to synth
+                                    if (synth.volume) {
+                                        const dbValue = -20 + (norm * 20); // -20dB to 0dB range
+                                        synth.volume.setValueAtTime(dbValue, tm);
+                                        console.log(`🔊 Volume set to ${dbValue.toFixed(1)}dB`);
                                     }
                                 } else {
-                                    console.warn(`⚠️  Filter CC${mod.controller} ignored - no filter in audio chain`);
+                                    console.warn(`⚠️  Unknown modulation target: ${hint.target}`);
                                 }
                                 break;
                             }
@@ -1717,6 +1675,227 @@ class jmonTone {
             });
         });
     }
+
+    /**
+     * Check if a node type is an effect
+     * @param {string} type - Node type
+     * @returns {boolean} True if it's an effect
+     */
+    static isEffectNode(type) {
+        const effectTypes = [
+            'Filter', 'AutoFilter', 'Reverb', 'FeedbackDelay', 'PingPongDelay', 'Delay',
+            'Chorus', 'Phaser', 'Tremolo', 'AutoWah', 'Distortion', 'Chebyshev', 
+            'BitCrusher', 'Compressor', 'Limiter', 'Gate', 'FrequencyShifter', 
+            'PitchShift', 'JCReverb', 'Freeverb', 'StereoWidener', 'MidSideCompressor'
+        ];
+        return effectTypes.includes(type);
+    }
+
+    /**
+     * Create an effect node based on type and options
+     * @param {string} type - Effect type
+     * @param {Object} options - Effect options
+     * @returns {Object} Tone.js effect instance
+     */
+    static createEffect(type, options = {}) {
+        try {
+            switch (type) {
+                case 'Reverb':
+                    return new Tone.Reverb({
+                        decay: options.decay || 1.5,
+                        preDelay: options.preDelay || 0.01,
+                        wet: options.wet || 0.4
+                    });
+                
+                case 'JCReverb':
+                    return new Tone.JCReverb({
+                        roomSize: options.roomSize || 0.5,
+                        wet: options.wet || 0.3
+                    });
+                
+                case 'Freeverb':
+                    return new Tone.Freeverb({
+                        roomSize: options.roomSize || 0.7,
+                        dampening: options.dampening || 3000,
+                        wet: options.wet || 0.3
+                    });
+                
+                case 'Delay':
+                    return new Tone.Delay({
+                        delayTime: options.delayTime || 0.25,
+                        maxDelay: options.maxDelay || 1
+                    });
+                
+                case 'FeedbackDelay':
+                    return new Tone.FeedbackDelay({
+                        delayTime: options.delayTime || "8n",
+                        feedback: options.feedback || 0.4,
+                        wet: options.wet || 0.5
+                    });
+                
+                case 'PingPongDelay':
+                    return new Tone.PingPongDelay({
+                        delayTime: options.delayTime || "4n",
+                        feedback: options.feedback || 0.3,
+                        wet: options.wet || 0.5
+                    });
+                
+                case 'Chorus':
+                    return new Tone.Chorus({
+                        frequency: options.frequency || 1.5,
+                        delayTime: options.delayTime || 3.5,
+                        depth: options.depth || 0.7,
+                        type: options.type || "sine",
+                        spread: options.spread || 180,
+                        wet: options.wet || 0.5
+                    }).start();
+                
+                case 'Phaser':
+                    return new Tone.Phaser({
+                        frequency: options.frequency || 0.5,
+                        octaves: options.octaves || 3,
+                        stages: options.stages || 10,
+                        Q: options.Q || 10,
+                        baseFrequency: options.baseFrequency || 350,
+                        wet: options.wet || 0.5
+                    });
+                
+                case 'Tremolo':
+                    return new Tone.Tremolo({
+                        frequency: options.frequency || 4,
+                        type: options.type || "sine",
+                        depth: options.depth || 0.5,
+                        spread: options.spread || 180,
+                        wet: options.wet || 1
+                    }).start();
+                
+                case 'Vibrato':
+                    return new Tone.Vibrato({
+                        frequency: options.frequency || 6,
+                        type: options.type || "sine",
+                        depth: options.depth || 0.1,
+                        wet: options.wet || 1
+                    });
+                
+                case 'AutoWah':
+                    return new Tone.AutoWah({
+                        baseFrequency: options.baseFrequency || 100,
+                        octaves: options.octaves || 6,
+                        sensitivity: options.sensitivity || 0,
+                        Q: options.Q || 2,
+                        gain: options.gain || 2,
+                        follower: options.follower || {
+                            attack: 0.3,
+                            release: 0.5
+                        },
+                        wet: options.wet || 1
+                    });
+                
+                case 'Distortion':
+                    return new Tone.Distortion({
+                        distortion: options.distortion || 0.4,
+                        oversample: options.oversample || "4x",
+                        wet: options.wet || 1
+                    });
+                
+                case 'Chebyshev':
+                    return new Tone.Chebyshev({
+                        order: options.order || 50,
+                        oversample: options.oversample || "4x",
+                        wet: options.wet || 1
+                    });
+                
+                case 'BitCrusher':
+                    return new Tone.BitCrusher({
+                        bits: options.bits || 4,
+                        wet: options.wet || 1
+                    });
+                
+                case 'Compressor':
+                    return new Tone.Compressor({
+                        threshold: options.threshold || -24,
+                        ratio: options.ratio || 12,
+                        attack: options.attack || 0.003,
+                        release: options.release || 0.25,
+                        knee: options.knee || 30
+                    });
+                
+                case 'Limiter':
+                    return new Tone.Limiter(options.threshold || -12);
+                
+                case 'Gate':
+                    return new Tone.Gate({
+                        threshold: options.threshold || -40,
+                        attack: options.attack || 0.1,
+                        release: options.release || 0.1
+                    });
+                
+                case 'Filter':
+                    return new Tone.Filter({
+                        frequency: options.frequency || 350,
+                        type: options.type || "lowpass",
+                        rolloff: options.rolloff || -12,
+                        Q: options.Q || 1
+                    });
+                
+                case 'AutoFilter':
+                    return new Tone.AutoFilter({
+                        frequency: options.frequency || "8n",
+                        type: options.type || "sine",
+                        depth: options.depth || 1,
+                        baseFrequency: options.baseFrequency || 200,
+                        octaves: options.octaves || 2.6,
+                        filter: {
+                            type: options.filterType || "lowpass",
+                            rolloff: options.rolloff || -12,
+                            Q: options.Q || 1
+                        },
+                        wet: options.wet || 1
+                    }).start();
+                
+                case 'FrequencyShifter':
+                    return new Tone.FrequencyShifter({
+                        frequency: options.frequency || 0,
+                        wet: options.wet || 1
+                    });
+                
+                case 'PitchShift':
+                    return new Tone.PitchShift({
+                        pitch: options.pitch || 0,
+                        windowSize: options.windowSize || 0.1,
+                        delayTime: options.delayTime || 0,
+                        feedback: options.feedback || 0,
+                        wet: options.wet || 1
+                    });
+                
+                case 'StereoWidener':
+                    return new Tone.StereoWidener({
+                        width: options.width || 0.5
+                    });
+                
+                case 'MidSideCompressor':
+                    return new Tone.MidSideCompressor({
+                        mid: {
+                            threshold: options.midThreshold || -24,
+                            ratio: options.midRatio || 3
+                        },
+                        side: {
+                            threshold: options.sideThreshold || -30,
+                            ratio: options.sideRatio || 6
+                        }
+                    });
+                
+                default:
+                    console.warn(`Unknown effect type: ${type}`);
+                    return null;
+            }
+        } catch (error) {
+            console.error(`Error creating effect ${type}:`, error);
+            return null;
+        }
+    }
+
+    // ...existing code...
 }
 
 // Export for Node.js (CommonJS)

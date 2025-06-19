@@ -167,64 +167,12 @@
           },
           "type": {
             "type": "string",
-            "enum": ["Synth", "PolySynth", "MonoSynth", "AMSynth", "FMSynth", "DuoSynth", "PluckSynth", "NoiseSynth", "Sampler", "Filter", "AutoFilter", "Reverb", "Delay", "Chorus", "Distortion", "Compressor", "Limiter", "Gate", "Destination"],
-            "description": "Type of audio node (Synth, Sampler, Filter, etc.)."
+            "enum": ["Synth", "PolySynth", "MonoSynth", "AMSynth", "FMSynth", "DuoSynth", "PluckSynth", "NoiseSynth", "Sampler", "Filter", "AutoFilter", "Reverb", "FeedbackDelay", "PingPongDelay", "Delay", "Chorus", "Phaser", "Tremolo", "Vibrato", "AutoWah", "Distortion", "Chebyshev", "BitCrusher", "Compressor", "Limiter", "Gate", "FrequencyShifter", "PitchShift", "JCReverb", "Freeverb", "StereoWidener", "MidSideCompressor", "Destination"],
+            "description": "Type of audio node (Synth, Sampler, Effect, etc.)."
           },
           "options": {
             "type": "object",
-            "description": "Options for this node. Content varies by node type.",
-            "properties": {
-              "urls": {
-                "type": "object",
-                "description": "Sample URLs for Sampler nodes (note -> file path mapping)",
-                "patternProperties": {
-                  "^[A-G](#|b)?[0-8]$": {
-                    "type": "string",
-                    "description": "File path to sample for this note"
-                  }
-                }
-              },
-              "envelope": {
-                "type": "object",
-                "description": "Automatic envelope for Samplers to smooth attack/release",
-                "properties": {
-                  "enabled": {
-                    "type": "boolean",
-                    "default": true,
-                    "description": "Whether to apply automatic envelope"
-                  },
-                  "attack": {
-                    "type": "number",
-                    "minimum": 0,
-                    "maximum": 2,
-                    "default": 0.02,
-                    "description": "Attack time in seconds"
-                  },
-                  "decay": {
-                    "type": "number",
-                    "minimum": 0,
-                    "maximum": 2,
-                    "default": 0.1,
-                    "description": "Decay time in seconds"
-                  },
-                  "sustain": {
-                    "type": "number",
-                    "minimum": 0,
-                    "maximum": 1,
-                    "default": 0.8,
-                    "description": "Sustain level (0-1)"
-                  },
-                  "release": {
-                    "type": "number",
-                    "minimum": 0,
-                    "maximum": 5,
-                    "default": 0.3,
-                    "description": "Release time in seconds"
-                  }
-                },
-                "additionalProperties": false
-              }
-            }
+            "description": "Options for this node. Content varies by node type."
           },
           "target": {
             "type": "string",
@@ -235,6 +183,434 @@
             "description": "Reference to a custom preset."
           }
         },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "type": {
+                  "const": "Sampler"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "options": {
+                  "type": "object",
+                  "properties": {
+                    "urls": {
+                      "type": "object",
+                      "description": "Sample URLs for Sampler nodes (note -> file path mapping)",
+                      "patternProperties": {
+                        "^[A-G](#|b)?[0-8]$": {
+                          "type": "string",
+                          "description": "File path to sample for this note"
+                        }
+                      }
+                    },
+                    "envelope": {
+                      "type": "object",
+                      "description": "Automatic envelope for Samplers to smooth attack/release",
+                      "properties": {
+                        "enabled": {
+                          "type": "boolean",
+                          "default": true,
+                          "description": "Whether to apply automatic envelope"
+                        },
+                        "attack": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 2,
+                          "default": 0.02,
+                          "description": "Attack time in seconds"
+                        },
+                        "decay": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 2,
+                          "default": 0.1,
+                          "description": "Decay time in seconds"
+                        },
+                        "sustain": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 1,
+                          "default": 0.8,
+                          "description": "Sustain level (0-1)"
+                        },
+                        "release": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 5,
+                          "default": 0.3,
+                          "description": "Release time in seconds"
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "type": {
+                  "enum": ["Synth", "PolySynth", "MonoSynth", "AMSynth", "FMSynth", "DuoSynth", "PluckSynth", "NoiseSynth"]
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "options": {
+                  "type": "object",
+                  "properties": {
+                    "oscillator": {
+                      "type": "object",
+                      "description": "Oscillator settings for synths"
+                    },
+                    "envelope": {
+                      "type": "object",
+                      "description": "ADSR envelope settings for synths"
+                    },
+                    "filter": {
+                      "type": "object",
+                      "description": "Filter settings for synths"
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "type": {
+                  "enum": ["Reverb", "JCReverb", "Freeverb"]
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "options": {
+                  "type": "object",
+                  "properties": {
+                    "wet": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1,
+                      "default": 0.5,
+                      "description": "Wet/dry mix (0=dry, 1=wet)"
+                    },
+                    "roomSize": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1,
+                      "default": 0.7,
+                      "description": "Room size for reverb effects"
+                    },
+                    "dampening": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1,
+                      "default": 0.3,
+                      "description": "Dampening for reverb effects"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "type": {
+                  "enum": ["Delay", "FeedbackDelay", "PingPongDelay"]
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "options": {
+                  "type": "object",
+                  "properties": {
+                    "wet": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1,
+                      "default": 0.5,
+                      "description": "Wet/dry mix (0=dry, 1=wet)"
+                    },
+                    "delayTime": {
+                      "type": "string",
+                      "default": "8n",
+                      "description": "Delay time (note values like '8n' or seconds)"
+                    },
+                    "feedback": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 0.95,
+                      "default": 0.4,
+                      "description": "Feedback amount for delay effects"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "type": {
+                  "enum": ["Filter", "AutoFilter"]
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "options": {
+                  "type": "object",
+                  "properties": {
+                    "frequency": {
+                      "type": "number",
+                      "minimum": 20,
+                      "maximum": 20000,
+                      "default": 1000,
+                      "description": "Filter frequency"
+                    },
+                    "Q": {
+                      "type": "number",
+                      "minimum": 0.1,
+                      "maximum": 50,
+                      "default": 1,
+                      "description": "Filter Q/resonance"
+                    },
+                    "type": {
+                      "type": "string",
+                      "enum": ["lowpass", "highpass", "bandpass", "notch"],
+                      "default": "lowpass",
+                      "description": "Filter type"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "type": {
+                  "enum": ["Chorus", "Phaser"]
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "options": {
+                  "type": "object",
+                  "properties": {
+                    "wet": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1,
+                      "default": 0.5,
+                      "description": "Wet/dry mix (0=dry, 1=wet)"
+                    },
+                    "depth": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1,
+                      "default": 0.5,
+                      "description": "Modulation depth"
+                    },
+                    "rate": {
+                      "type": "string",
+                      "default": "4n",
+                      "description": "Modulation rate (note values or Hz)"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "type": {
+                  "enum": ["Compressor", "Limiter", "Gate"]
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "options": {
+                  "type": "object",
+                  "properties": {
+                    "threshold": {
+                      "type": "number",
+                      "minimum": -60,
+                      "maximum": 0,
+                      "default": -24,
+                      "description": "Threshold in dB"
+                    },
+                    "ratio": {
+                      "type": "number",
+                      "minimum": 1,
+                      "maximum": 20,
+                      "default": 4,
+                      "description": "Compression ratio"
+                    },
+                    "attack": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1,
+                      "default": 0.003,
+                      "description": "Attack time for compressor/gate"
+                    },
+                    "release": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1,
+                      "default": 0.1,
+                      "description": "Release time for compressor/gate"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "type": {
+                  "enum": ["Distortion", "Chebyshev"]
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "options": {
+                  "type": "object",
+                  "properties": {
+                    "wet": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1,
+                      "default": 0.5,
+                      "description": "Wet/dry mix (0=dry, 1=wet)"
+                    },
+                    "distortion": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1,
+                      "default": 0.4,
+                      "description": "Distortion amount"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "type": {
+                  "const": "BitCrusher"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "options": {
+                  "type": "object",
+                  "properties": {
+                    "wet": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1,
+                      "default": 0.5,
+                      "description": "Wet/dry mix (0=dry, 1=wet)"
+                    },
+                    "bits": {
+                      "type": "number",
+                      "minimum": 1,
+                      "maximum": 16,
+                      "default": 4,
+                      "description": "Bit depth for BitCrusher"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "type": {
+                  "const": "Tremolo"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "options": {
+                  "type": "object",
+                  "properties": {
+                    "wet": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1,
+                      "default": 1,
+                      "description": "Wet/dry mix (0=dry, 1=wet)"
+                    },
+                    "frequency": {
+                      "type": "number",
+                      "minimum": 0.1,
+                      "maximum": 20,
+                      "default": 4,
+                      "description": "Tremolo frequency in Hz"
+                    },
+                    "depth": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1,
+                      "default": 0.5,
+                      "description": "Tremolo depth"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "type": {
+                  "const": "Destination"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "options": {
+                  "type": "object",
+                  "properties": {},
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        ],
         "additionalProperties": false
       }
     },
@@ -582,8 +958,11 @@
               "properties": {
                 "target": {
                   "type": "string",
-                  "enum": ["filter", "vibrato", "tremolo", "glissando"],
-                  "description": "Desired effect for this CC mapping."
+                  "description": "Target for this CC mapping - can be legacy target (filter, vibrato, tremolo, glissando) or specific effect node ID from audioGraph."
+                },
+                "parameter": {
+                  "type": "string",
+                  "description": "Parameter name to control on the target effect (e.g., 'frequency', 'depth', 'Q')."
                 },
                 "frequency": {
                   "type": "number",
@@ -591,7 +970,7 @@
                 },
                 "depthRange": {
                   "type": "array",
-                  "description": "Min/max depth or frequency range.",
+                  "description": "Min/max depth or frequency range for the parameter.",
                   "items": { "type": "number" },
                   "minItems": 2,
                   "maxItems": 2

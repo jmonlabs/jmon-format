@@ -1,0 +1,156 @@
+{
+    "format": "jmonTone",
+    "version": "1.0",
+    "bpm": 120,
+    "metadata": {
+        "name": "Advanced Effects Demo",
+        "author": "jmonTone",
+        "description": "Démonstration des effets avancés: Reverb, Delay, Chorus, Distortion"
+    },
+    "audioGraph": [
+        { 
+            "id": "trumpetSampler", 
+            "type": "Sampler", 
+            "options": {
+                "urls": {
+                    "C4": "./20231__mtg__trumpet-single-notes-played-badly/247164__mtg__overall-quality-of-single-note-trumpet-c4.wav",
+                    "D4": "./20231__mtg__trumpet-single-notes-played-badly/247162__mtg__overall-quality-of-single-note-trumpet-d4.wav",
+                    "E4": "./20231__mtg__trumpet-single-notes-played-badly/247161__mtg__overall-quality-of-single-note-trumpet-e4.wav",
+                    "F4": "./20231__mtg__trumpet-single-notes-played-badly/247159__mtg__overall-quality-of-single-note-trumpet-f4.wav"
+                },
+                "envelope": {
+                    "attack": 0.01,
+                    "release": 0.3
+                }
+            }
+        },
+        { 
+            "id": "reverbEffect", 
+            "type": "Freeverb", 
+            "options": {
+                "roomSize": 0.8,
+                "dampening": 2000,
+                "wet": 0.4
+            }
+        },
+        { 
+            "id": "delayEffect", 
+            "type": "FeedbackDelay", 
+            "options": {
+                "delayTime": "8n",
+                "feedback": 0.3,
+                "wet": 0.3
+            }
+        },
+        { 
+            "id": "chorusEffect", 
+            "type": "Chorus", 
+            "options": {
+                "frequency": 2,
+                "delayTime": 3,
+                "depth": 0.5,
+                "wet": 0.6
+            }
+        },
+        { 
+            "id": "distortionEffect", 
+            "type": "Distortion", 
+            "options": {
+                "distortion": 0.2,
+                "wet": 0.5
+            }
+        },
+        { 
+            "id": "filterEffect", 
+            "type": "Filter", 
+            "options": {
+                "frequency": 1000,
+                "type": "lowpass",
+                "Q": 2
+            }
+        },
+        { 
+            "id": "tremoloEffect", 
+            "type": "Tremolo", 
+            "options": {
+                "frequency": 3,
+                "depth": 0.4,
+                "wet": 1.0
+            }
+        },
+        { 
+            "id": "master", 
+            "type": "Destination", 
+            "options": {}
+        }
+    ],
+    "connections": [
+        ["trumpetSampler", "reverbEffect"],
+        ["reverbEffect", "delayEffect"],
+        ["delayEffect", "chorusEffect"],
+        ["chorusEffect", "distortionEffect"],
+        ["distortionEffect", "filterEffect"],
+        ["filterEffect", "tremoloEffect"],
+        ["tremoloEffect", "master"]
+    ],
+    "converterHints": {
+        "tone": {
+            "cc1": { "target": "filterEffect", "parameter": "frequency", "depthRange": [200, 3000] },
+            "cc7": { "target": "tremoloEffect", "parameter": "depth", "depthRange": [0, 0.8] }
+        }
+    },
+    "sequences": [
+        {
+            "name": "Effects Demo Sequence",
+            "label": "Advanced Effects Test",
+            "synthRef": "trumpetSampler",
+            "notes": [
+                {
+                    "note": "C4",
+                    "time": 0,
+                    "duration": 2.0,
+                    "velocity": 0.8,
+                    "modulations": []
+                },
+                {
+                    "note": "D4",
+                    "time": 2.5,
+                    "duration": 2.0,
+                    "velocity": 0.8,
+                    "modulations": []
+                },
+                {
+                    "note": "E4",
+                    "time": 5,
+                    "duration": 2.0,
+                    "velocity": 0.8,
+                    "modulations": [
+                        { "type": "cc", "controller": 1, "value": 0, "time": 0 },
+                        { "type": "cc", "controller": 1, "value": 127, "time": 1.5 }
+                    ]
+                },
+                {
+                    "note": "F4",
+                    "time": 7.5,
+                    "duration": 3.0,
+                    "velocity": 0.8,
+                    "modulations": [
+                        { "type": "cc", "controller": 7, "value": 0, "time": 0 },
+                        { "type": "cc", "controller": 7, "value": 100, "time": 1.0 }
+                    ]
+                },
+                {
+                    "note": "C4",
+                    "time": 11,
+                    "duration": 4.0,
+                    "velocity": 1.0,
+                    "modulations": [
+                        { "type": "pitchBend", "value": 0, "time": 0 },
+                        { "type": "pitchBend", "value": 4096, "time": 2.0 },
+                        { "type": "pitchBend", "value": -2048, "time": 3.0 }
+                    ]
+                }
+            ]
+        }
+    ]
+}

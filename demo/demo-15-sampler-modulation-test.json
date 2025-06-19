@@ -1,0 +1,178 @@
+{
+    "format": "jmonTone",
+    "version": "1.0",
+    "bpm": 120,
+    "metadata": {
+        "name": "Sampler Modulation Test",
+        "author": "jmonlabs team",
+        "description": "Test pitch bend, tremolo, and vibrato effects with trumpet sampler"
+    },
+    "converterHints": {
+        "tone": {
+            "cc1": { "target": "vibratoEffect", "parameter": "depth", "depthRange": [0, 50] },
+            "cc11": { "target": "tremoloEffect", "parameter": "depth", "depthRange": [0, 0.8] }
+        }
+    },
+    "audioGraph": [
+        {
+            "id": "master",
+            "type": "Destination",
+            "options": {}
+        },
+        {
+            "id": "trumpetSampler",
+            "type": "Sampler",
+            "options": {
+                "urls": {
+                    "C4": "./20231__mtg__trumpet-single-notes-played-badly/247164__mtg__overall-quality-of-single-note-trumpet-c4.wav",
+                    "D4": "./20231__mtg__trumpet-single-notes-played-badly/247162__mtg__overall-quality-of-single-note-trumpet-d4.wav",
+                    "E4": "./20231__mtg__trumpet-single-notes-played-badly/247161__mtg__overall-quality-of-single-note-trumpet-e4.wav",
+                    "F4": "./20231__mtg__trumpet-single-notes-played-badly/247159__mtg__overall-quality-of-single-note-trumpet-f4.wav",
+                    "G4": "./20231__mtg__trumpet-single-notes-played-badly/247157__mtg__overall-quality-of-single-note-trumpet-g4.wav"
+                },
+                "envelope": {
+                    "attack": 0.01,
+                    "decay": 0.05,
+                    "sustain": 0.9,
+                    "release": 0.6
+                }
+            }
+        },
+        {
+            "id": "vibratoEffect",
+            "type": "Vibrato",
+            "options": {
+                "frequency": 6,
+                "depth": 0,
+                "type": "sine"
+            }
+        },
+        {
+            "id": "tremoloEffect",
+            "type": "Tremolo",
+            "options": {
+                "frequency": 4,
+                "depth": 0,
+                "type": "sine"
+            }
+        },
+        {
+            "id": "masterGain",
+            "type": "Gain",
+            "options": {
+                "gain": 0.8
+            }
+        }
+    ],
+    "connections": [
+        ["trumpetSampler", "vibratoEffect"],
+        ["vibratoEffect", "tremoloEffect"],
+        ["tremoloEffect", "masterGain"],
+        ["masterGain", "master"]
+    ],
+    "sequences": [
+        {
+            "label": "Test 1: Pure Pitch Bend Only",
+            "synthRef": "trumpetSampler",
+            "midiChannel": 0,
+            "notes": [
+                {
+                    "note": "C4",
+                    "time": 0,
+                    "duration": 4,
+                    "velocity": 0.8,
+                    "modulations": [
+                        { "type": "pitchBend", "value": 0, "time": 0 },
+                        { "type": "pitchBend", "value": 2048, "time": 1 },
+                        { "type": "pitchBend", "value": -2048, "time": 2 },
+                        { "type": "pitchBend", "value": 0, "time": 3 }
+                    ]
+                }
+            ]
+        },
+        {
+            "label": "Test 2: Tremolo via CC11",
+            "synthRef": "trumpetSampler",
+            "midiChannel": 0,
+            "notes": [
+                {
+                    "note": "D4",
+                    "time": 5,
+                    "duration": 4,
+                    "velocity": 0.8,
+                    "modulations": [
+                        { "type": "cc", "controller": 11, "value": 0, "time": 0 },
+                        { "type": "cc", "controller": 11, "value": 127, "time": 2 }
+                    ]
+                }
+            ]
+        },
+        {
+            "label": "Test 3: Vibrato via CC1",
+            "synthRef": "trumpetSampler",
+            "midiChannel": 0,
+            "notes": [
+                {
+                    "note": "E4",
+                    "time": 10,
+                    "duration": 4,
+                    "velocity": 0.8,
+                    "modulations": [
+                        { "type": "cc", "controller": 1, "value": 0, "time": 0 },
+                        { "type": "cc", "controller": 1, "value": 127, "time": 2 }
+                    ]
+                }
+            ]
+        },
+        {
+            "label": "Test 4: Combined Pitch Bend + Tremolo + Vibrato",
+            "synthRef": "trumpetSampler",
+            "midiChannel": 0,
+            "notes": [
+                {
+                    "note": "F4",
+                    "time": 15,
+                    "duration": 6,
+                    "velocity": 0.8,
+                    "modulations": [
+                        { "type": "pitchBend", "value": 0, "time": 0 },
+                        { "type": "pitchBend", "value": 1536, "time": 2 },
+                        { "type": "pitchBend", "value": -1536, "time": 4 },
+                        { "type": "pitchBend", "value": 0, "time": 5.5 },
+                        { "type": "cc", "controller": 1, "value": 0, "time": 0 },
+                        { "type": "cc", "controller": 1, "value": 100, "time": 1.5 },
+                        { "type": "cc", "controller": 11, "value": 0, "time": 0 },
+                        { "type": "cc", "controller": 11, "value": 80, "time": 3 }
+                    ]
+                }
+            ]
+        },
+        {
+            "label": "Test 5: Quick Pitch Bend Gestures",
+            "synthRef": "trumpetSampler",
+            "midiChannel": 0,
+            "notes": [
+                {
+                    "note": "G4",
+                    "time": 22,
+                    "duration": 1,
+                    "velocity": 0.9,
+                    "modulations": [
+                        { "type": "pitchBend", "value": -4096, "time": 0 },
+                        { "type": "pitchBend", "value": 0, "time": 0.8 }
+                    ]
+                },
+                {
+                    "note": "G4",
+                    "time": 24,
+                    "duration": 1,
+                    "velocity": 0.9,
+                    "modulations": [
+                        { "type": "pitchBend", "value": 0, "time": 0 },
+                        { "type": "pitchBend", "value": 4096, "time": 0.8 }
+                    ]
+                }
+            ]
+        }
+    ]
+}

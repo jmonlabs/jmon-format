@@ -1,0 +1,68 @@
+{
+    "format": "jmonTone",
+    "version": "1.0",
+    "bpm": 120,
+    "metadata": {
+        "name": "Complex Modulations Demo",
+        "description": "Multiple CC controllers and complex modulation patterns"
+    },
+    "converterHints": {
+        "tone": {
+            "cc1": { "target": "vibrato", "frequency": 6, "depthRange": [-30, 30] },
+            "cc7": { "target": "volume", "depthRange": [-40, 0] },
+            "cc11": { "target": "tremoloEffect", "parameter": "depth", "depthRange": [0, 0.7] },
+            "cc71": { "target": "filterEffect", "parameter": "Q", "depthRange": [0.5, 20] },
+            "cc73": { "target": "envelope.attack", "depthRange": [0.001, 1] },
+            "cc74": { "target": "filterEffect", "parameter": "frequency", "depthRange": [150, 6000] }
+        }
+    },
+    "audioGraph": [
+        { "id": "master", "type": "Destination", "options": {} },
+        { "id": "complexSynth", "type": "AMSynth", "options": {
+            "oscillator": { "type": "square" },
+            "modulation": { "type": "sine" },
+            "envelope": { "attack": 0.1, "decay": 0.2, "sustain": 0.5, "release": 1 },
+            "modulationEnvelope": { "attack": 0.05, "decay": 0.1, "sustain": 0.3, "release": 0.8 }
+        }},
+        { "id": "filterEffect", "type": "Filter", "options": {
+            "type": "lowpass",
+            "frequency": 1000,
+            "Q": 5
+        }},
+        { "id": "tremoloEffect", "type": "Tremolo", "options": {
+            "frequency": 5,
+            "depth": 0.3,
+            "wet": 1.0
+        }}
+    ],
+    "connections": [
+        ["complexSynth", "filterEffect"],
+        ["filterEffect", "tremoloEffect"],
+        ["tremoloEffect", "master"]
+    ],
+    "sequences": [
+        {
+            "label": "Heavily Modulated Lead",
+            "synthRef": "complexSynth",
+            "notes": [
+                {
+                    "note": "A4",
+                    "time": 0,
+                    "duration": 4,
+                    "velocity": 0.8,
+                    "modulations": [
+                        { "type": "cc", "controller": 74, "value": 20, "time": 0 },
+                        { "type": "cc", "controller": 74, "value": 127, "time": 2 },
+                        { "type": "cc", "controller": 74, "value": 60, "time": 4 },
+                        { "type": "cc", "controller": 71, "value": 10, "time": 0 },
+                        { "type": "cc", "controller": 71, "value": 80, "time": 1.5 },
+                        { "type": "cc", "controller": 1, "value": 0, "time": 0 },
+                        { "type": "cc", "controller": 1, "value": 100, "time": 3 },
+                        { "type": "cc", "controller": 11, "value": 0, "time": 0 },
+                        { "type": "cc", "controller": 11, "value": 90, "time": 2.5 }
+                    ]
+                }
+            ]
+        }
+    ]
+}

@@ -1,0 +1,708 @@
+{
+    "format": "jmonTone",
+    "version": "1.0",
+    "bpm": 85,
+    "metadata": {
+        "name": "Symphonic Masterpiece - Extended",
+        "author": "jmonlabs team",
+        "description": "Rich complex composition with extended harmonies, multiple melodies, and comprehensive effects processing with master compression"
+    },
+    "converterHints": {
+        "tone": {
+            "cc1": { "target": "filterEffect", "parameter": "frequency", "depthRange": [200, 4000] },
+            "cc7": { "target": "volume", "depthRange": [-20, 0] },
+            "cc11": { "target": "tremoloEffect", "parameter": "depth", "depthRange": [0, 0.8] },
+            "cc71": { "target": "filterEffect", "parameter": "Q", "depthRange": [0.5, 15] },
+            "cc72": { "target": "envelope.release", "depthRange": [0.1, 3.0] },
+            "cc73": { "target": "envelope.attack", "depthRange": [0.001, 0.5] },
+            "cc74": { "target": "filterEffect", "parameter": "frequency", "depthRange": [100, 8000] }
+        }
+    },
+    "audioGraph": [
+        {
+            "id": "master",
+            "type": "Destination",
+            "options": {}
+        },
+        {
+            "id": "leadSynth",
+            "type": "MonoSynth",
+            "options": {
+                "oscillator": { "type": "sawtooth" },
+                "envelope": { "attack": 0.01, "decay": 0.1, "sustain": 0.6, "release": 0.8 },
+                "portamento": 0.05
+            }
+        },
+        {
+            "id": "padSynth",
+            "type": "PolySynth",
+            "options": {
+                "polyphony": 8,
+                "voice": {
+                    "oscillator": { "type": "triangle" },
+                    "envelope": { "attack": 0.8, "decay": 0.3, "sustain": 0.7, "release": 2.5 }
+                }
+            }
+        },
+        {
+            "id": "fmSynth",
+            "type": "FMSynth",
+            "options": {
+                "harmonicity": 3,
+                "modulationIndex": 12,
+                "oscillator": { "type": "sine" },
+                "envelope": { "attack": 0.02, "decay": 0.2, "sustain": 0.4, "release": 1.2 },
+                "modulation": { "type": "square" },
+                "modulationEnvelope": { "attack": 0.1, "decay": 0.1, "sustain": 0.3, "release": 0.8 }
+            }
+        },
+        {
+            "id": "duoSynth",
+            "type": "DuoSynth",
+            "options": {
+                "voice0": {
+                    "oscillator": { "type": "sine" },
+                    "envelope": { "attack": 0.05, "decay": 0.1, "sustain": 0.8, "release": 1.0 }
+                },
+                "voice1": {
+                    "oscillator": { "type": "sawtooth" },
+                    "envelope": { "attack": 0.02, "decay": 0.2, "sustain": 0.6, "release": 0.9 }
+                },
+                "harmonicity": 1.5,
+                "vibratoAmount": 0.1,
+                "vibratoRate": 5
+            }
+        },
+        {
+            "id": "pluckSynth",
+            "type": "PluckSynth",
+            "options": {
+                "attackNoise": 1,
+                "dampening": 4000,
+                "resonance": 0.7
+            }
+        },
+        {
+            "id": "trumpetSampler",
+            "type": "Sampler",
+            "options": {
+                "urls": {
+                    "C4": "./20231__mtg__trumpet-single-notes-played-badly/247164__mtg__overall-quality-of-single-note-trumpet-c4.wav",
+                    "D4": "./20231__mtg__trumpet-single-notes-played-badly/247162__mtg__overall-quality-of-single-note-trumpet-d4.wav",
+                    "E4": "./20231__mtg__trumpet-single-notes-played-badly/247161__mtg__overall-quality-of-single-note-trumpet-e4.wav",
+                    "F4": "./20231__mtg__trumpet-single-notes-played-badly/247159__mtg__overall-quality-of-single-note-trumpet-f4.wav",
+                    "G4": "./20231__mtg__trumpet-single-notes-played-badly/247157__mtg__overall-quality-of-single-note-trumpet-g4.wav"
+                },
+                "envelope": {
+                    "attack": 0.01,
+                    "decay": 0.05,
+                    "sustain": 0.9,
+                    "release": 0.6
+                }
+            }
+        },
+        {
+            "id": "filterEffect",
+            "type": "Filter",
+            "options": {
+                "type": "lowpass",
+                "frequency": 1200,
+                "Q": 6
+            }
+        },
+        {
+            "id": "tremoloEffect",
+            "type": "Tremolo",
+            "options": {
+                "frequency": 4,
+                "depth": 0.4,
+                "wet": 1.0
+            }
+        },
+        {
+            "id": "reverbEffect",
+            "type": "Freeverb",
+            "options": {
+                "roomSize": 0.7,
+                "dampening": 3000,
+                "wet": 0.3
+            }
+        },
+        {
+            "id": "delayEffect",
+            "type": "FeedbackDelay",
+            "options": {
+                "delayTime": "8n",
+                "feedback": 0.25,
+                "wet": 0.2
+            }
+        },
+        {
+            "id": "chorusEffect",
+            "type": "Chorus",
+            "options": {
+                "frequency": 1.5,
+                "delayTime": 3.5,
+                "depth": 0.7,
+                "wet": 0.4
+            }
+        },
+        {
+            "id": "distortionEffect",
+            "type": "Distortion",
+            "options": {
+                "distortion": 0.1,
+                "wet": 0.3
+            }
+        },
+        {
+            "id": "masterCompressor",
+            "type": "Compressor",
+            "options": {
+                "threshold": -18,
+                "ratio": 4,
+                "attack": 0.003,
+                "release": 0.1
+            }
+        },
+        {
+            "id": "masterLimiter",
+            "type": "Limiter",
+            "options": {
+                "threshold": -3
+            }
+        }
+    ],
+    "connections": [
+        ["leadSynth", "filterEffect"],
+        ["filterEffect", "tremoloEffect"],
+        ["tremoloEffect", "reverbEffect"],
+        ["reverbEffect", "masterCompressor"],
+        
+        ["padSynth", "chorusEffect"],
+        ["chorusEffect", "reverbEffect"],
+        
+        ["fmSynth", "delayEffect"],
+        ["delayEffect", "reverbEffect"],
+        
+        ["duoSynth", "distortionEffect"],
+        ["distortionEffect", "reverbEffect"],
+        
+        ["pluckSynth", "delayEffect"],
+        
+        ["trumpetSampler", "filterEffect"],
+        
+        ["masterCompressor", "masterLimiter"],
+        ["masterLimiter", "master"]
+    ],
+    "sequences": [
+        {
+            "label": "Lead Melody with Complex Modulations",
+            "synthRef": "leadSynth",
+            "midiChannel": 0,
+            "notes": [
+                {
+                    "note": "C5",
+                    "time": 0,
+                    "duration": 2,
+                    "velocity": 0.9,
+                    "modulations": [
+                        { "type": "cc", "controller": 74, "value": 20, "time": 0 },
+                        { "type": "cc", "controller": 74, "value": 120, "time": 1.5 },
+                        { "type": "cc", "controller": 1, "value": 0, "time": 0 },
+                        { "type": "cc", "controller": 1, "value": 80, "time": 1 },
+                        { "type": "pitchBend", "value": 0, "time": 0 },
+                        { "type": "pitchBend", "value": 2048, "time": 0.5 },
+                        { "type": "pitchBend", "value": 0, "time": 1.0 }
+                    ]
+                },
+                {
+                    "note": "A4",
+                    "time": 2,
+                    "duration": 1.5,
+                    "velocity": 0.8,
+                    "modulations": [
+                        { "type": "cc", "controller": 11, "value": 0, "time": 0 },
+                        { "type": "cc", "controller": 11, "value": 100, "time": 1 }
+                    ]
+                },
+                {
+                    "note": "F5",
+                    "time": 3.5,
+                    "duration": 2.5,
+                    "velocity": 1.0,
+                    "modulations": [
+                        { "type": "cc", "controller": 71, "value": 10, "time": 0 },
+                        { "type": "cc", "controller": 71, "value": 90, "time": 1.5 },
+                        { "type": "pitchBend", "value": 0, "time": 0 },
+                        { "type": "pitchBend", "value": -1024, "time": 1.0 },
+                        { "type": "pitchBend", "value": 1024, "time": 2.0 },
+                        { "type": "pitchBend", "value": 0, "time": 2.5 }
+                    ]
+                },
+                {
+                    "note": "D5",
+                    "time": 6,
+                    "duration": 2,
+                    "velocity": 0.7,
+                    "modulations": [
+                        { "type": "cc", "controller": 73, "value": 127, "time": 0 },
+                        { "type": "cc", "controller": 72, "value": 80, "time": 1.5 }
+                    ]
+                },
+                {
+                    "note": "E5",
+                    "time": 8,
+                    "duration": 1.5,
+                    "velocity": 0.85,
+                    "modulations": [
+                        { "type": "cc", "controller": 74, "value": 60, "time": 0 },
+                        { "type": "cc", "controller": 74, "value": 127, "time": 1.2 }
+                    ]
+                },
+                {
+                    "note": "G5",
+                    "time": 9.5,
+                    "duration": 2,
+                    "velocity": 0.9,
+                    "modulations": [
+                        { "type": "pitchBend", "value": 0, "time": 0 },
+                        { "type": "pitchBend", "value": 1536, "time": 0.8 },
+                        { "type": "pitchBend", "value": 0, "time": 1.6 }
+                    ]
+                },
+                {
+                    "note": "C6",
+                    "time": 11.5,
+                    "duration": 4,
+                    "velocity": 1.0,
+                    "modulations": [
+                        { "type": "cc", "controller": 11, "value": 0, "time": 0 },
+                        { "type": "cc", "controller": 11, "value": 127, "time": 2 },
+                        { "type": "cc", "controller": 11, "value": 40, "time": 3.5 }
+                    ]
+                },
+                {
+                    "note": "A5",
+                    "time": 15.5,
+                    "duration": 2.5,
+                    "velocity": 0.8,
+                    "modulations": [
+                        { "type": "cc", "controller": 74, "value": 100, "time": 0 },
+                        { "type": "cc", "controller": 74, "value": 20, "time": 2 }
+                    ]
+                }
+            ]
+        },
+        {
+            "label": "Rich Harmonic Pad Progressions",
+            "synthRef": "padSynth",
+            "midiChannel": 1,
+            "notes": [
+                {
+                    "note": ["C4", "E4", "G4", "B4"],
+                    "time": 0,
+                    "duration": 4,
+                    "velocity": 0.6,
+                    "modulations": [
+                        { "type": "cc", "controller": 7, "value": 90, "time": 0 },
+                        { "type": "cc", "controller": 7, "value": 110, "time": 3 }
+                    ]
+                },
+                {
+                    "note": ["F4", "A4", "C5", "E5"],
+                    "time": 4,
+                    "duration": 4,
+                    "velocity": 0.7,
+                    "modulations": [
+                        { "type": "cc", "controller": 7, "value": 100, "time": 0 },
+                        { "type": "cc", "controller": 7, "value": 80, "time": 3 }
+                    ]
+                },
+                {
+                    "note": ["G4", "B4", "D5", "F#5"],
+                    "time": 8,
+                    "duration": 3.5,
+                    "velocity": 0.8,
+                    "modulations": [
+                        { "type": "cc", "controller": 7, "value": 85, "time": 0 },
+                        { "type": "cc", "controller": 7, "value": 120, "time": 2.5 }
+                    ]
+                },
+                {
+                    "note": ["C4", "E4", "G4", "C5", "E5"],
+                    "time": 11.5,
+                    "duration": 4,
+                    "velocity": 0.9,
+                    "modulations": [
+                        { "type": "cc", "controller": 7, "value": 127, "time": 0 },
+                        { "type": "cc", "controller": 7, "value": 60, "time": 3.5 }
+                    ]
+                },
+                {
+                    "note": ["F4", "A4", "C5", "F5"],
+                    "time": 15.5,
+                    "duration": 2.5,
+                    "velocity": 0.7
+                }
+            ]
+        },
+        {
+            "label": "Dynamic FM Bass Line",
+            "synthRef": "fmSynth",
+            "midiChannel": 2,
+            "notes": [
+                {
+                    "note": "C3",
+                    "time": 0,
+                    "duration": 1,
+                    "velocity": 0.9,
+                    "modulations": [
+                        { "type": "cc", "controller": 1, "value": 40, "time": 0 },
+                        { "type": "cc", "controller": 1, "value": 100, "time": 0.8 }
+                    ]
+                },
+                {
+                    "note": "F3",
+                    "time": 1,
+                    "duration": 1,
+                    "velocity": 0.8
+                },
+                {
+                    "note": "G3",
+                    "time": 2,
+                    "duration": 0.5,
+                    "velocity": 0.7
+                },
+                {
+                    "note": "C3",
+                    "time": 2.5,
+                    "duration": 1.5,
+                    "velocity": 0.9,
+                    "modulations": [
+                        { "type": "pitchBend", "value": 0, "time": 0 },
+                        { "type": "pitchBend", "value": 1536, "time": 0.75 },
+                        { "type": "pitchBend", "value": 0, "time": 1.5 }
+                    ]
+                },
+                {
+                    "note": "A2",
+                    "time": 4,
+                    "duration": 1,
+                    "velocity": 0.8
+                },
+                {
+                    "note": "F3",
+                    "time": 5,
+                    "duration": 1,
+                    "velocity": 0.9
+                },
+                {
+                    "note": "G2",
+                    "time": 6,
+                    "duration": 2,
+                    "velocity": 0.85,
+                    "modulations": [
+                        { "type": "cc", "controller": 1, "value": 20, "time": 0 },
+                        { "type": "cc", "controller": 1, "value": 127, "time": 1.5 }
+                    ]
+                },
+                {
+                    "note": "C3",
+                    "time": 8,
+                    "duration": 1.5,
+                    "velocity": 0.9
+                },
+                {
+                    "note": "E3",
+                    "time": 9.5,
+                    "duration": 1,
+                    "velocity": 0.8
+                },
+                {
+                    "note": "F3",
+                    "time": 10.5,
+                    "duration": 1,
+                    "velocity": 0.7
+                },
+                {
+                    "note": "A2",
+                    "time": 11.5,
+                    "duration": 2,
+                    "velocity": 0.9,
+                    "modulations": [
+                        { "type": "pitchBend", "value": 0, "time": 0 },
+                        { "type": "pitchBend", "value": -1024, "time": 1 },
+                        { "type": "pitchBend", "value": 0, "time": 2 }
+                    ]
+                },
+                {
+                    "note": "F3",
+                    "time": 13.5,
+                    "duration": 2,
+                    "velocity": 0.8
+                },
+                {
+                    "note": "C3",
+                    "time": 15.5,
+                    "duration": 2.5,
+                    "velocity": 1.0
+                }
+            ]
+        },
+        {
+            "label": "Expressive Duo Synth Harmonies",
+            "synthRef": "duoSynth",
+            "midiChannel": 3,
+            "notes": [
+                {
+                    "note": "E4",
+                    "time": 1,
+                    "duration": 3,
+                    "velocity": 0.6,
+                    "modulations": [
+                        { "type": "cc", "controller": 1, "value": 0, "time": 0 },
+                        { "type": "cc", "controller": 1, "value": 127, "time": 2.5 }
+                    ]
+                },
+                {
+                    "note": "B4",
+                    "time": 4.5,
+                    "duration": 2.5,
+                    "velocity": 0.7,
+                    "modulations": [
+                        { "type": "cc", "controller": 11, "value": 60, "time": 0 },
+                        { "type": "cc", "controller": 11, "value": 20, "time": 2 }
+                    ]
+                },
+                {
+                    "note": "D5",
+                    "time": 7.5,
+                    "duration": 3,
+                    "velocity": 0.8,
+                    "modulations": [
+                        { "type": "cc", "controller": 1, "value": 80, "time": 0 },
+                        { "type": "cc", "controller": 1, "value": 20, "time": 2.5 }
+                    ]
+                },
+                {
+                    "note": "G4",
+                    "time": 11,
+                    "duration": 2.5,
+                    "velocity": 0.75,
+                    "modulations": [
+                        { "type": "cc", "controller": 11, "value": 0, "time": 0 },
+                        { "type": "cc", "controller": 11, "value": 100, "time": 2 }
+                    ]
+                },
+                {
+                    "note": "C5",
+                    "time": 14,
+                    "duration": 4,
+                    "velocity": 0.9,
+                    "modulations": [
+                        { "type": "cc", "controller": 1, "value": 127, "time": 0 },
+                        { "type": "cc", "controller": 1, "value": 0, "time": 3.5 }
+                    ]
+                }
+            ]
+        },
+        {
+            "label": "Extended Plucked Arpeggios",
+            "synthRef": "pluckSynth",
+            "midiChannel": 4,
+            "notes": [
+                { "note": "C4", "time": 0, "duration": 0.3, "velocity": 0.8 },
+                { "note": "E4", "time": 0.25, "duration": 0.3, "velocity": 0.7 },
+                { "note": "G4", "time": 0.5, "duration": 0.3, "velocity": 0.9 },
+                { "note": "C5", "time": 0.75, "duration": 0.3, "velocity": 0.6 },
+                { "note": "G4", "time": 1, "duration": 0.3, "velocity": 0.8 },
+                { "note": "E4", "time": 1.25, "duration": 0.3, "velocity": 0.7 },
+                { "note": "F4", "time": 2, "duration": 0.3, "velocity": 0.8 },
+                { "note": "A4", "time": 2.25, "duration": 0.3, "velocity": 0.7 },
+                { "note": "C5", "time": 2.5, "duration": 0.3, "velocity": 0.9 },
+                { "note": "F5", "time": 2.75, "duration": 0.3, "velocity": 0.6 },
+                { "note": "C5", "time": 3, "duration": 0.3, "velocity": 0.8 },
+                { "note": "A4", "time": 3.25, "duration": 0.3, "velocity": 0.7 },
+                { "note": "G4", "time": 4, "duration": 0.4, "velocity": 0.9 },
+                { "note": "B4", "time": 4.5, "duration": 0.4, "velocity": 0.8 },
+                { "note": "D5", "time": 5, "duration": 0.4, "velocity": 0.7 },
+                { "note": "G5", "time": 5.5, "duration": 0.4, "velocity": 0.9 },
+                { "note": "D5", "time": 6, "duration": 0.4, "velocity": 0.8 },
+                { "note": "B4", "time": 6.5, "duration": 0.4, "velocity": 0.7 },
+                { "note": "G4", "time": 7, "duration": 0.5, "velocity": 1.0 },
+                { "note": "C4", "time": 8, "duration": 0.25, "velocity": 0.9 },
+                { "note": "E4", "time": 8.25, "duration": 0.25, "velocity": 0.8 },
+                { "note": "G4", "time": 8.5, "duration": 0.25, "velocity": 0.7 },
+                { "note": "C5", "time": 8.75, "duration": 0.25, "velocity": 0.9 },
+                { "note": "E5", "time": 9, "duration": 0.25, "velocity": 0.8 },
+                { "note": "G5", "time": 9.25, "duration": 0.25, "velocity": 0.7 },
+                { "note": "C6", "time": 9.5, "duration": 0.25, "velocity": 1.0 },
+                { "note": "G5", "time": 9.75, "duration": 0.25, "velocity": 0.8 },
+                { "note": "E5", "time": 10, "duration": 0.3, "velocity": 0.7 },
+                { "note": "C5", "time": 10.3, "duration": 0.3, "velocity": 0.9 },
+                { "note": "G4", "time": 10.6, "duration": 0.3, "velocity": 0.8 },
+                { "note": "E4", "time": 10.9, "duration": 0.3, "velocity": 0.7 },
+                { "note": "F4", "time": 11.5, "duration": 0.3, "velocity": 0.8 },
+                { "note": "A4", "time": 11.8, "duration": 0.3, "velocity": 0.9 },
+                { "note": "C5", "time": 12.1, "duration": 0.3, "velocity": 0.7 },
+                { "note": "F5", "time": 12.4, "duration": 0.3, "velocity": 0.8 },
+                { "note": "A5", "time": 12.7, "duration": 0.3, "velocity": 0.9 },
+                { "note": "F5", "time": 13, "duration": 0.3, "velocity": 0.7 },
+                { "note": "C5", "time": 13.3, "duration": 0.3, "velocity": 0.8 },
+                { "note": "A4", "time": 13.6, "duration": 0.3, "velocity": 0.7 },
+                { "note": "F4", "time": 13.9, "duration": 0.3, "velocity": 0.9 },
+                { "note": "C4", "time": 14.5, "duration": 1, "velocity": 1.0 },
+                { "note": "G4", "time": 15.5, "duration": 0.5, "velocity": 0.8 },
+                { "note": "E4", "time": 16, "duration": 0.5, "velocity": 0.7 },
+                { "note": "C4", "time": 16.5, "duration": 1.5, "velocity": 0.9 }
+            ]
+        },
+        {
+            "label": "Extended Trumpet Solo with Rich Expression",
+            "synthRef": "trumpetSampler",
+            "midiChannel": 5,
+            "notes": [
+                {
+                    "note": "G4",
+                    "time": 0.5,
+                    "duration": 1.5,
+                    "velocity": 0.7,
+                    "modulations": [
+                        { "type": "cc", "controller": 1, "value": 10, "time": 0 },
+                        { "type": "cc", "controller": 1, "value": 80, "time": 1.2 }
+                    ]
+                },
+                {
+                    "note": "C4",
+                    "time": 2.5,
+                    "duration": 1,
+                    "velocity": 0.8,
+                    "modulations": [
+                        { "type": "pitchBend", "value": 0, "time": 0 },
+                        { "type": "pitchBend", "value": 512, "time": 0.5 },
+                        { "type": "pitchBend", "value": 0, "time": 1 }
+                    ]
+                },
+                {
+                    "note": "F4",
+                    "time": 4,
+                    "duration": 2,
+                    "velocity": 0.9,
+                    "modulations": [
+                        { "type": "cc", "controller": 11, "value": 0, "time": 0 },
+                        { "type": "cc", "controller": 11, "value": 100, "time": 1.5 },
+                        { "type": "cc", "controller": 74, "value": 60, "time": 0 },
+                        { "type": "cc", "controller": 74, "value": 127, "time": 1.8 }
+                    ]
+                },
+                {
+                    "note": "E4",
+                    "time": 6.5,
+                    "duration": 1.5,
+                    "velocity": 0.8,
+                    "modulations": [
+                        { "type": "pitchBend", "value": 0, "time": 0 },
+                        { "type": "pitchBend", "value": -1024, "time": 0.75 },
+                        { "type": "pitchBend", "value": 0, "time": 1.5 }
+                    ]
+                },
+                {
+                    "note": "G4",
+                    "time": 8.5,
+                    "duration": 1.5,
+                    "velocity": 0.9,
+                    "modulations": [
+                        { "type": "cc", "controller": 1, "value": 20, "time": 0 },
+                        { "type": "cc", "controller": 1, "value": 100, "time": 1.2 },
+                        { "type": "pitchBend", "value": 0, "time": 0 },
+                        { "type": "pitchBend", "value": 512, "time": 0.3 },
+                        { "type": "pitchBend", "value": 0, "time": 0.6 }
+                    ]
+                },
+                {
+                    "note": "F4",
+                    "time": 10.5,
+                    "duration": 0.8,
+                    "velocity": 0.8,
+                    "modulations": [
+                        { "type": "cc", "controller": 11, "value": 0, "time": 0 },
+                        { "type": "cc", "controller": 11, "value": 80, "time": 0.6 }
+                    ]
+                },
+                {
+                    "note": "E4",
+                    "time": 11.8,
+                    "duration": 1.2,
+                    "velocity": 0.7
+                },
+                {
+                    "note": "D4",
+                    "time": 13.5,
+                    "duration": 1.5,
+                    "velocity": 0.9,
+                    "modulations": [
+                        { "type": "cc", "controller": 74, "value": 80, "time": 0 },
+                        { "type": "cc", "controller": 74, "value": 127, "time": 1.2 }
+                    ]
+                },
+                {
+                    "note": "C4",
+                    "time": 15.5,
+                    "duration": 2.5,
+                    "velocity": 1.0,
+                    "modulations": [
+                        { "type": "cc", "controller": 74, "value": 60, "time": 0 },
+                        { "type": "cc", "controller": 74, "value": 127, "time": 1.5 },
+                        { "type": "cc", "controller": 72, "value": 40, "time": 0 },
+                        { "type": "cc", "controller": 72, "value": 100, "time": 2.2 },
+                        { "type": "cc", "controller": 11, "value": 0, "time": 0 },
+                        { "type": "cc", "controller": 11, "value": 127, "time": 2 }
+                    ]
+                }
+            ]
+        }
+    ],
+    "annotations": [
+        {
+            "time": 0,
+            "type": "rehearsalMark",
+            "text": "A - Opening Exposition"
+        },
+        {
+            "time": 4,
+            "type": "rehearsalMark",
+            "text": "B - Harmonic Development"
+        },
+        {
+            "time": 8,
+            "type": "rehearsalMark",
+            "text": "C - Climactic Build"
+        },
+        {
+            "time": 11.5,
+            "type": "rehearsalMark",
+            "text": "D - Peak Resolution"
+        },
+        {
+            "time": 15.5,
+            "type": "rehearsalMark",
+            "text": "E - Final Cadence"
+        },
+        {
+            "time": 0,
+            "type": "comment",
+            "text": "Extended masterpiece with rich harmonies, complex modulations, and master compression/limiting"
+        },
+        {
+            "time": 8,
+            "type": "comment",
+            "text": "Trumpet solo emerges with full expression throughout the piece"
+        },
+        {
+            "time": 11.5,
+            "type": "comment",
+            "text": "All instruments converge for climactic finale with extensive modulation"
+        }
+    ]
+}

@@ -122,7 +122,7 @@
     </style>
 </head>
 <body>
-    <h1>jmon-tone Player</h1>
+    <h1>jmon played by jmon-tone.js</h1>
     
     <div class="controls">
         <div class="control-row">
@@ -151,18 +151,21 @@
     <script>
         // Demo files list
         const demoFiles = [
-            'demo-01-basic-synth.json',
-            'demo-02-polyphonic.json',
-            'demo-03-modulation-wheel.json',
-            'demo-04-pitch-bend.json',
-            'demo-05-vibrato.json',
-            'demo-06-tremolo.json',
-            'demo-07-fm-synthesis.json',
-            'demo-08-duo-synth.json',
-            'demo-09-pluck-synth.json',
-            'demo-10-sampler-envelope.json',
-            'demo-11-multitrack-ensemble.json',
-            'demo-12-complex-modulations.json'
+            'demo/demo-01-basic-synth.json',
+            'demo/demo-02-polyphonic.json',
+            'demo/demo-03-modulation-wheel.json',
+            'demo/demo-04-pitch-bend.json',
+            'demo/demo-05-vibrato.json',
+            'demo/demo-06-tremolo.json',
+            'demo/demo-07-fm-synthesis.json',
+            'demo/demo-08-duo-synth.json',
+            'demo/demo-09-pluck-synth.json',
+            'demo/demo-10-sampler-envelope.json',
+            'demo/demo-11-multitrack-ensemble.json',
+            'demo/demo-12-complex-modulations.json',
+            'demo/demo-13-advanced-effects.json',
+            'demo/demo-14-masterpiece.json',
+            'demo/demo-15-sampler-modulation-test.json',
         ];
         
         // State management
@@ -184,7 +187,7 @@
             demoFiles.forEach(file => {
                 const option = document.createElement('option');
                 option.value = file;
-                option.textContent = file.replace('.json', '').replace('demo-', 'Demo ').replace(/-/g, ' ');
+                option.textContent = file.replace('demo/', '').replace('.json', '').replace('demo-', 'Demo ').replace(/-/g, ' ');
                 fileSelect.appendChild(option);
             });
         }
