@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ABC Test</title>
+    <script src="lib/abcjs-basic-min.js"></script>
+</head>
+<body>
+    <h1>ABC Notation Test</h1>
+    
+    <h2>Simple Valid ABC</h2>
+    <div id="score1"></div>
+    
+    <h2>Our Generated ABC</h2>
+    <div id="score2"></div>
+    
+    <script>
+        // Test 1: Known working ABC notation
+        const simpleAbc = `X:1
+T:Simple Test
+M:4/4
+L:1/4
+Q:1/4=120
+K:C
+
+C D E F | G2 z2 |]`;
+
+        console.log("Rendering simple ABC:");
+        console.log(simpleAbc);
+        
+        ABCJS.renderAbc("score1", simpleAbc, {
+            responsive: "resize",
+            staffwidth: 600
+        });
+        
+        // Test 2: Our generated ABC
+        const ourAbc = `X:1
+T:Basic Synthesizer Demo
+M:4/4
+L:1/4
+Q:1/4=120
+K:C
+N:Simple monophonic synthesizer with basic envelope
+S:Generated from jmon format
+
+ C D E F G2 |]`;
+
+        console.log("Rendering our ABC:");
+        console.log(ourAbc);
+        
+        ABCJS.renderAbc("score2", ourAbc, {
+            responsive: "resize", 
+            staffwidth: 600
+        });
+    </script>
+</body>
+</html>

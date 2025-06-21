@@ -1,0 +1,113 @@
+{
+    "format": "jmonTone",
+    "version": "1.0",
+    "bpm": 100,
+    "keySignature": "Dm",
+    "timeSignature": "3/4",
+    "metadata": {
+        "name": "Complex Modulations Demo",
+        "author": "jmon Demo",
+        "description": "Advanced modulation techniques: pitch bends, CC controllers, aftertouch"
+    },
+    "audioGraph": [
+        { "id": "master", "type": "Destination", "options": {} },
+        { 
+            "id": "expressiveSynth", 
+            "type": "FMSynth", 
+            "options": {
+                "harmonicity": 3,
+                "modulationIndex": 10,
+                "envelope": { "attack": 0.2, "decay": 0.4, "sustain": 0.6, "release": 1.5 }
+            }
+        },
+        {
+            "id": "filterEffect",
+            "type": "Filter",
+            "options": { "frequency": 800, "type": "lowpass", "Q": 2 }
+        },
+        {
+            "id": "chorusEffect",
+            "type": "Chorus",
+            "options": { "frequency": 2, "delayTime": 3, "depth": 0.5 }
+        }
+    ],
+    "connections": [
+        ["expressiveSynth", "filterEffect"],
+        ["filterEffect", "chorusEffect"],
+        ["chorusEffect", "master"]
+    ],
+    "sequences": [
+        {
+            "label": "Expressive Solo",
+            "synthRef": "expressiveSynth",
+            "midiChannel": 0,
+            "notes": [
+                {
+                    "note": "D4",
+                    "time": 0,
+                    "duration": 2,
+                    "velocity": 0.6,
+                    "modulations": [
+                        { "type": "pitchBend", "value": 0, "time": 0 },
+                        { "type": "pitchBend", "value": 4096, "time": 1 },
+                        { "type": "pitchBend", "value": 0, "time": 1.8 },
+                        { "type": "cc", "controller": 1, "value": 0, "time": 0 },
+                        { "type": "cc", "controller": 1, "value": 100, "time": 0.5 },
+                        { "type": "cc", "controller": 1, "value": 50, "time": 1.5 }
+                    ]
+                },
+                {
+                    "note": "F4",
+                    "time": 2,
+                    "duration": 1.5,
+                    "velocity": 0.8,
+                    "modulations": [
+                        { "type": "cc", "controller": 74, "value": 127, "time": 0 },
+                        { "type": "cc", "controller": 74, "value": 20, "time": 1.2 },
+                        { "type": "aftertouch", "value": 0, "time": 0 },
+                        { "type": "aftertouch", "value": 127, "time": 0.7 }
+                    ]
+                },
+                {
+                    "note": "A4",
+                    "time": 3.5,
+                    "duration": 2.5,
+                    "velocity": 0.9,
+                    "microtuning": 0.25,
+                    "modulations": [
+                        { "type": "cc", "controller": 1, "value": 127, "time": 0 },
+                        { "type": "cc", "controller": 1, "value": 0, "time": 2 },
+                        { "type": "pitchBend", "value": 2048, "time": 0.5 },
+                        { "type": "pitchBend", "value": -1024, "time": 1.5 },
+                        { "type": "pitchBend", "value": 0, "time": 2.3 }
+                    ]
+                }
+            ]
+        }
+    ],
+    "tempoMap": [
+        { "time": 0, "bpm": 100 },
+        { "time": 3, "bpm": 80 },
+        { "time": 5, "bpm": 100 }
+    ],
+    "annotations": [
+        { "text": "Begin with gentle vibrato", "time": 0, "type": "comment" },
+        { "text": "Filter sweep", "time": 2, "type": "comment" },
+        { "text": "Microtonal bend", "time": 3.5, "type": "comment" },
+        { "text": "Rallentando", "time": 3, "type": "marker" }
+    ],
+    "converterHints": {
+        "tone": {
+            "cc1": {
+                "target": "vibrato",
+                "frequency": 6,
+                "depthRange": [-30, 30]
+            },
+            "cc74": {
+                "target": "filterEffect",
+                "parameter": "frequency",
+                "depthRange": [200, 2000]
+            }
+        }
+    }
+}

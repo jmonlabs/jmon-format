@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>jmon Unified Demo</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700&family=Fira+Mono:wght@400;700&display=swap" rel="stylesheet">
+        <script src="../lib/Tone.js?v=11"></script>
+        <script src="../lib/abcjs-basic.min.js"></script>
+        <script src="../jmon-tone.js?v=11"></script>
+        <script src="../jmon-midi.js?v=11"></script>
+        <script src="../jmon-abc.js?v=11"></script>
+        <script src="../jmon-supercollider.js?v=11"></script>
+        <style>
+            body {
+                font-family: 'Merriweather', serif;
+                background: #fff;
+                color: #232323;
+                margin: 0;
+                padding: 0;
+            }
+            .header {
+                display: flex;
+                align-items: center;
+                gap: 18px;
+                background: #232946;
+                color: #fff;
+                padding: 24px 32px 18px 32px;
+                border-bottom: 2px solid #b8c1ec;
+            }
+            .header .logo {
+                font-size: 2.1em;
+                font-weight: 700;
+                letter-spacing: 2px;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                font-family: 'Merriweather', serif;
+            }
+            h1 {
+                font-size: 2em;
+                font-weight: 700;
+                margin: 0 0 10px 0;
+                letter-spacing: 1px;
+                font-family: 'Merriweather', serif;
+            }
+            .main-content {
+                max-width: 900px;
+                margin: 32px auto 0 auto;
+                padding: 0 16px 32px 16px;
+            }
+            .controls {
+                background: #f4f4f6;
+                border-radius: 10px;
+                border: 1px solid #e0e0e0;
+                padding: 16px 20px 8px 20px;
+                margin-bottom: 24px;
+                display: flex;
+                flex-wrap: wrap;
+                gap: 18px 32px;
+                align-items: center;
+            }
+            .controls label {
+                font-weight: 600;
+                min-width: 120px;
+                color: #232946;
+                font-family: 'Merriweather', serif;
+            }
+            .controls select, .controls button {
+                font-size: 1em;
+                border-radius: 6px;
+                border: 1px solid #b8c1ec;
+                padding: 8px 18px;
+                background: #fff;
+                color: #232323;
+                transition: background 0.2s, color 0.2s;
+            }
+            .controls button {
+                font-weight: 700;
+                background: #232946;
+                color: #fff;
+                border: none;
+                margin-right: 8px;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+            .controls button:disabled {
+                background: #e0e0e0;
+                color: #888;
+                border: none;
+                cursor: not-allowed;
+            }
+            .tabs {
+                display: flex;
+                margin-bottom: 0;
+                border-radius: 10px 10px 0 0;
+                overflow: hidden;
+                border: 1px solid #e0e0e0;
+                background: #f4f4f6;
+            }
+            .tab {
+                flex: 1 1 0;
+                text-align: center;
+                padding: 14px 0;
+                background: #f4f4f6;
+                color: #232946;
+                font-weight: 700;
+                font-size: 1.08em;
+                border: none;
+                cursor: pointer;
+                transition: background 0.2s, color 0.2s;
+                border-bottom: 2px solid transparent;
+                font-family: 'Merriweather', serif;
+            }
+            .tab.active {
+                background: #fff;
+                color: #232946;
+                border-bottom: 2px solid #232946;
+                z-index: 2;
+            }
+            .tab:not(.active):hover {
+                background: #e0e0e0;
+            }
+            .tab-content {
+                display: none;
+                background: #fff;
+                border-radius: 0 0 10px 10px;
+                border: 1px solid #e0e0e0;
+                border-top: none;
+                padding: 24px 18px 18px 18px;
+                margin-bottom: 32px;
+            }
+            .tab-content.active {
+                display: block;
+            }
+            .output-area {
+                border-radius: 8px;
+                background: #f9f9fb;
+                border: 1px solid #e0e0e0;
+                margin-top: 16px;
+                margin-bottom: 16px;
+                padding: 0;
+                position: relative;
+            }
+            .output-header {
+                background: #232946;
+                color: white;
+                padding: 10px 18px;
+                font-weight: 700;
+                border-radius: 8px 8px 0 0;
+                font-size: 1.08em;
+                letter-spacing: 1px;
+                font-family: 'Merriweather', serif;
+            }
+            textarea, .score-container {
+                width: 100%;
+                font-family: 'Fira Mono', 'Courier New', monospace;
+                font-size: 1.08em;
+                border: none;
+                background: transparent;
+                color: #232323;
+                padding: 18px 38px 18px 18px;
+                border-radius: 0 0 8px 8px;
+                min-height: 180px;
+                box-sizing: border-box;
+                resize: vertical;
+            }
+            .score-container {
+                min-height: 220px;
+                background: #fff;
+                display: flex;
+                flex-direction: column;
+                align-items: stretch;
+                overflow-x: auto;
+            }
+            .score-container svg {
+                width: 100% !important;
+                height: auto !important;
+                min-height: 180px;
+                max-width: 100%;
+                display: block;
+                margin: 0 auto;
+            }
+            .copy-btn {
+                position: absolute;
+                top: 10px;
+                right: 10px;
+                background: #e0e0e0;
+                color: #232946;
+                border: none;
+                border-radius: 5px;
+                padding: 6px 10px;
+                font-size: 1.1em;
+                cursor: pointer;
+                transition: background 0.2s;
+                display: flex;
+                align-items: center;
+                gap: 4px;
+            }
+            .copy-btn:hover {
+                background: #b8c1ec;
+                color: #232946;
+            }
+            .status {
+                margin-top: 15px;
+                padding: 10px;
+                border-radius: 8px;
+                background: #e3f2fd;
+                color: #1976d2;
+                text-align: center;
+                font-weight: bold;
+                border: 1px solid #b8c1ec;
+            }
+            .status.error {
+                background: #ffebee;
+                color: #c62828;
+            }
+            .status.success {
+                background: #e8f5e9;
+                color: #388e3c;
+            }
+            @media (max-width: 700px) {
+                .main-content { padding: 0 2vw; }
+                .controls { flex-direction: column; gap: 10px 0; }
+                .tab { font-size: 1em; padding: 12px 0; }
+                .tab-content { padding: 12px 2vw 12px 2vw; }
+            }
+        </style>
+</head>
+<body>
+        <div class="header">
+            <span class="logo"><span class="icon">🎶</span>jmon Unified Demo</span>
+        </div>
+        <div class="main-content">
+            <div class="controls">
+                <label for="fileSelect">Select demo file:</label>
+                <select id="fileSelect"><option value="">-- Select a demo file --</option></select>
+                <button id="playButton" disabled>▶️ Play (Tone.js)</button>
+                <button id="stopButton" disabled>⏹️ Stop</button>
+                <button id="analyzeButton" disabled>🧪 Analyze</button>
+            </div>
+            <div class="tabs">
+                <div class="tab active" data-tab="json">JMON JSON</div>
+                <div class="tab" data-tab="abc">ABC Notation</div>
+                <div class="tab" data-tab="midi">MIDI</div>
+                <div class="tab" data-tab="supercollider">SuperCollider</div>
+            </div>
+            <div class="tab-content active" id="json-tab">
+                <div class="output-area">
+                    <div class="output-header">JMON File (JSON)
+                        <button class="copy-btn" id="copyJsonBtn" title="Copier"><span>📋</span></button>
+                    </div>
+                    <textarea id="jmonJson"></textarea>
+                    <button id="updateJmonBtn" style="margin: 10px 0 0 0; float: right;">Mettre à jour</button>
+                </div>
+            </div>
+            <div class="tab-content" id="abc-tab">
+                <div class="output-area">
+                    <div class="output-header">ABC Notation Output
+                        <button class="copy-btn" id="copyAbcBtn" title="Copier"><span>📋</span></button>
+                    </div>
+                    <textarea id="abcOutput" readonly></textarea>
+                </div>
+                <div class="output-area">
+                    <div class="output-header">Musical Score</div>
+                    <div id="abcScore" class="score-container"></div>
+                </div>
+                <div class="controls" style="margin-top: 18px;">
+                    <button id="convertAbcButton" disabled>🎼 Convert to ABC</button>
+                    <button id="downloadAbcButton" disabled>⬇️ Download ABC</button>
+                </div>
+            </div>
+            <div class="tab-content" id="midi-tab">
+                <div class="output-area">
+                    <div class="output-header">MIDI Analysis</div>
+                    <div id="midiAnalysis" class="analysis-report"></div>
+                </div>
+                <div class="controls" style="margin-top: 18px;">
+                    <button id="convertMidiButton" disabled>🎹 Convert to MIDI</button>
+                    <button id="downloadMidiButton" disabled>⬇️ Download MIDI</button>
+                </div>
+            </div>
+            <div class="tab-content" id="supercollider-tab">
+                <div class="output-area">
+                    <div class="output-header">SuperCollider Output
+                        <button class="copy-btn" id="copyScBtn" title="Copier"><span>📋</span></button>
+                    </div>
+                    <textarea id="scOutput" readonly></textarea>
+                </div>
+                <div class="controls" style="margin-top: 18px;">
+                    <button id="convertScButton" disabled>🔊 Convert to SuperCollider</button>
+                    <button id="downloadScButton" disabled>⬇️ Download .scd</button>
+                </div>
+            </div>
+            <div id="status" class="status" style="display: none;"></div>
+        </div>
+        <script src="demo.js"></script>
+    </body>
+</html>

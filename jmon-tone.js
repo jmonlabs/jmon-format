@@ -7,6 +7,14 @@
  * Originally designed for Tone.js but extensible to other audio frameworks.
  */
 
+(function(global) {
+    'use strict';
+    
+    // Check if already loaded
+    if (global.jmonTone) {
+        return;
+    }
+
 class jmonTone {
     static VERSION = "1.0";
     static FORMAT_IDENTIFIER = "jmonTone";
@@ -1903,7 +1911,9 @@ if (typeof module !== 'undefined' && module.exports) {
     module.exports = jmonTone;
 }
 
-// Export for browsers (global)
+// Export for browsers (global) - avoid redeclaration
 if (typeof window !== 'undefined') {
-    window.jmonTone = jmonTone;
+    window.jmonTone = window.jmonTone || jmonTone;
 }
+
+})(typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : this);

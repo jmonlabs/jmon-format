@@ -1,0 +1,127 @@
+{
+    "format": "jmonTone",
+    "version": "1.0",
+    "bpm": 128,
+    "keySignature": "C",
+    "timeSignature": "4/4",
+    "metadata": {
+        "name": "SuperCollider Features Demo",
+        "author": "jmon Demo",
+        "description": "Advanced synthesis and effects chain showcasing SuperCollider capabilities"
+    },
+    "audioGraph": [
+        { "id": "master", "type": "Destination", "options": {} },
+        { 
+            "id": "fmSynth", 
+            "type": "FMSynth", 
+            "options": {
+                "harmonicity": 2.5,
+                "modulationIndex": 15,
+                "oscillator": { "type": "sine" },
+                "envelope": { "attack": 0.05, "decay": 0.3, "sustain": 0.4, "release": 1.0 }
+            }
+        },
+        { 
+            "id": "noiseSynth", 
+            "type": "NoiseSynth", 
+            "options": {
+                "noise": { "type": "pink" },
+                "envelope": { "attack": 0.01, "decay": 0.2, "sustain": 0.1, "release": 0.5 }
+            }
+        },
+        { 
+            "id": "pluckSynth", 
+            "type": "PluckSynth", 
+            "options": {
+                "attackNoise": 1,
+                "dampening": 4000,
+                "resonance": 0.8
+            }
+        },
+        {
+            "id": "lowpassFilter",
+            "type": "Filter",
+            "options": { "frequency": 1200, "type": "lowpass", "Q": 5 }
+        },
+        {
+            "id": "distortion",
+            "type": "Distortion",
+            "options": { "distortion": 0.6, "oversample": "4x" }
+        },
+        {
+            "id": "delay",
+            "type": "FeedbackDelay",
+            "options": { "delayTime": "8n", "feedback": 0.6, "wet": 0.3 }
+        },
+        {
+            "id": "reverb",
+            "type": "Reverb",
+            "options": { "roomSize": 0.8, "dampening": 0.2, "wet": 0.5 }
+        },
+        {
+            "id": "compressor",
+            "type": "Compressor",
+            "options": { "threshold": -18, "ratio": 8, "attack": 0.01, "release": 0.2 }
+        }
+    ],
+    "connections": [
+        ["fmSynth", "lowpassFilter"],
+        ["lowpassFilter", "distortion"],
+        ["distortion", "delay"],
+        ["noiseSynth", "compressor"],
+        ["pluckSynth", "reverb"],
+        ["delay", "master"],
+        ["compressor", "master"],
+        ["reverb", "master"]
+    ],
+    "sequences": [
+        {
+            "label": "FM Lead",
+            "synthRef": "fmSynth",
+            "midiChannel": 0,
+            "notes": [
+                { "note": "C4", "time": 0, "duration": 0.25, "velocity": 0.8 },
+                { "note": "E4", "time": 0.25, "duration": 0.25, "velocity": 0.7 },
+                { "note": "G4", "time": 0.5, "duration": 0.25, "velocity": 0.9 },
+                { "note": "C5", "time": 0.75, "duration": 0.5, "velocity": 1.0 },
+                { "note": "G4", "time": 1.25, "duration": 0.25, "velocity": 0.6 },
+                { "note": "E4", "time": 1.5, "duration": 0.25, "velocity": 0.7 },
+                { "note": "C4", "time": 1.75, "duration": 0.5, "velocity": 0.8 }
+            ]
+        },
+        {
+            "label": "Percussion",
+            "synthRef": "noiseSynth",
+            "midiChannel": 9,
+            "notes": [
+                { "note": "C1", "time": 0, "duration": 0.1, "velocity": 0.9 },
+                { "note": "C1", "time": 0.5, "duration": 0.1, "velocity": 0.7 },
+                { "note": "C1", "time": 1, "duration": 0.1, "velocity": 0.9 },
+                { "note": "C1", "time": 1.5, "duration": 0.1, "velocity": 0.7 }
+            ]
+        },
+        {
+            "label": "Plucked Accompaniment",
+            "synthRef": "pluckSynth",
+            "midiChannel": 1,
+            "notes": [
+                { "note": "C3", "time": 0, "duration": 0.5, "velocity": 0.6 },
+                { "note": "G3", "time": 0.5, "duration": 0.5, "velocity": 0.5 },
+                { "note": "E3", "time": 1, "duration": 0.5, "velocity": 0.7 },
+                { "note": "C3", "time": 1.5, "duration": 0.5, "velocity": 0.6 }
+            ]
+        }
+    ],
+    "automation": [
+        { "target": "lowpassFilter.frequency", "time": 0, "value": 1200 },
+        { "target": "lowpassFilter.frequency", "time": 1, "value": 2500 },
+        { "target": "lowpassFilter.frequency", "time": 2, "value": 800 },
+        { "target": "distortion.distortion", "time": 0.5, "value": 0.3 },
+        { "target": "distortion.distortion", "time": 1.5, "value": 0.8 }
+    ],
+    "annotations": [
+        { "text": "Filter sweep begins", "time": 0, "type": "comment" },
+        { "text": "Distortion increases", "time": 0.5, "type": "comment" },
+        { "text": "Peak filter frequency", "time": 1, "type": "marker" }
+    ]
+}

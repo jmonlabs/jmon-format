@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ABC Debug Test</title>
+    <script src="lib/abcjs-basic-min.js"></script>
+</head>
+<body>
+    <h1>ABC Debug Test</h1>
+    
+    <h2>Test 1: Simple Working ABC</h2>
+    <div id="test1" style="border: 1px solid #ccc; min-height: 100px; margin: 10px;"></div>
+    
+    <h2>Test 2: Our Generated ABC (problematic)</h2>
+    <div id="test2" style="border: 1px solid #ccc; min-height: 100px; margin: 10px;"></div>
+    
+    <h2>Test 3: Fixed ABC</h2>
+    <div id="test3" style="border: 1px solid #ccc; min-height: 100px; margin: 10px;"></div>
+    
+    <script>
+        // Test 1: Known working ABC
+        const workingAbc = `X:1
+T:Simple Test
+M:4/4
+L:1/4
+Q:1/4=120
+K:C
+
+C D E F | G2 z2 |]`;
+
+        console.log("Test 1 - Working ABC:");
+        console.log(workingAbc);
+        ABCJS.renderAbc("test1", workingAbc);
+        
+        // Test 2: Our problematic ABC (simulate what our converter generates)
+        const problematicAbc = `X:1
+T:Basic Synthesizer Demo
+M:4/4
+L:1/4
+Q:1/4=120
+K:C
+N:Simple monophonic synthesizer with basic envelope
+S:Generated from jmon format
+
+C!mf! D!mp! E!f! F!p! G2!f! |]`;
+
+        console.log("Test 2 - Problematic ABC:");
+        console.log(problematicAbc);
+        ABCJS.renderAbc("test2", problematicAbc);
+        
+        // Test 3: Fixed ABC
+        const fixedAbc = `X:1
+T:Basic Synthesizer Demo
+M:4/4
+L:1/4
+Q:1/4=120
+K:C
+
+C D E F | G2 z2 |]`;
+
+        console.log("Test 3 - Fixed ABC:");
+        console.log(fixedAbc);
+        ABCJS.renderAbc("test3", fixedAbc);
+    </script>
+</body>
+</html>

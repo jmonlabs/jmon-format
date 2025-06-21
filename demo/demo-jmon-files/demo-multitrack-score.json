@@ -1,0 +1,87 @@
+{
+    "format": "jmonTone",
+    "version": "1.0",
+    "bpm": 140,
+    "keySignature": "G",
+    "timeSignature": "4/4",
+    "metadata": {
+        "name": "Multi-Track Score",
+        "author": "jmon Demo",
+        "description": "Traditional 4-part harmony ideal for ABC notation export"
+    },
+    "audioGraph": [
+        { "id": "master", "type": "Destination", "options": {} },
+        { "id": "soprano", "type": "Synth", "options": { "oscillator": { "type": "sine" } } },
+        { "id": "alto", "type": "Synth", "options": { "oscillator": { "type": "sine" } } },
+        { "id": "tenor", "type": "Synth", "options": { "oscillator": { "type": "sine" } } },
+        { "id": "bass", "type": "Synth", "options": { "oscillator": { "type": "sine" } } }
+    ],
+    "connections": [
+        ["soprano", "master"],
+        ["alto", "master"],
+        ["tenor", "master"],
+        ["bass", "master"]
+    ],
+    "sequences": [
+        {
+            "label": "Soprano",
+            "synthRef": "soprano",
+            "midiChannel": 0,
+            "notes": [
+                { "note": "G4", "time": 0, "duration": 1, "velocity": 0.8 },
+                { "note": "A4", "time": 1, "duration": 1, "velocity": 0.7 },
+                { "note": "B4", "time": 2, "duration": 1, "velocity": 0.9, "articulation": "accent" },
+                { "note": "C5", "time": 3, "duration": 1, "velocity": 0.8 },
+                { "note": "B4", "time": 4, "duration": 0.5, "velocity": 0.6, "articulation": "staccato" },
+                { "note": "A4", "time": 4.5, "duration": 0.5, "velocity": 0.6, "articulation": "staccato" },
+                { "note": "G4", "time": 5, "duration": 2, "velocity": 0.9 }
+            ]
+        },
+        {
+            "label": "Alto",
+            "synthRef": "alto",
+            "midiChannel": 1,
+            "notes": [
+                { "note": "D4", "time": 0, "duration": 1, "velocity": 0.7 },
+                { "note": "D4", "time": 1, "duration": 1, "velocity": 0.6 },
+                { "note": "G4", "time": 2, "duration": 1, "velocity": 0.8 },
+                { "note": "F#4", "time": 3, "duration": 1, "velocity": 0.7 },
+                { "note": "G4", "time": 4, "duration": 1, "velocity": 0.6 },
+                { "note": "D4", "time": 5, "duration": 2, "velocity": 0.8 }
+            ]
+        },
+        {
+            "label": "Tenor",
+            "synthRef": "tenor",
+            "midiChannel": 2,
+            "notes": [
+                { "note": "B3", "time": 0, "duration": 1, "velocity": 0.7 },
+                { "note": "C4", "time": 1, "duration": 1, "velocity": 0.6 },
+                { "note": "D4", "time": 2, "duration": 1, "velocity": 0.8 },
+                { "note": "A3", "time": 3, "duration": 1, "velocity": 0.7 },
+                { "note": "D4", "time": 4, "duration": 1, "velocity": 0.6 },
+                { "note": "B3", "time": 5, "duration": 2, "velocity": 0.8 }
+            ]
+        },
+        {
+            "label": "Bass",
+            "synthRef": "bass",
+            "midiChannel": 3,
+            "notes": [
+                { "note": "G2", "time": 0, "duration": 2, "velocity": 0.9 },
+                { "note": "G3", "time": 2, "duration": 1, "velocity": 0.8 },
+                { "note": "D3", "time": 3, "duration": 1, "velocity": 0.8 },
+                { "note": "G2", "time": 4, "duration": 1, "velocity": 0.7 },
+                { "note": "G2", "time": 5, "duration": 2, "velocity": 0.9 }
+            ]
+        }
+    ],
+    "annotations": [
+        { "text": "Amazing Grace", "time": 0, "type": "lyric" },
+        { "text": "how sweet the sound", "time": 2, "type": "lyric" },
+        { "text": "That saved a wretch", "time": 4, "type": "lyric" },
+        { "text": "like me", "time": 5.5, "type": "lyric" },
+        { "text": "A", "time": 0, "type": "rehearsal" },
+        { "text": "Moderato", "time": 0, "type": "marker" }
+    ]
+}
