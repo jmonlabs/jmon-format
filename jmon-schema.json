@@ -1,14 +1,12 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "JMON Composition (Multi-Track, Extended)",
-  "description": "A declarative music format supporting synthesis, MIDI, score notation, key changes, arbitrary metadata, annotations, and custom presets.",
+  "description": "A declarative music format supporting synthesis, MIDI, score notation, key changes, arbitrary metadata, annotations, and custom presets. Time values should use the bars:beats:ticks format (e.g., '2:1:240') for precise musical timing. This format is independent of BPM and follows professional DAW standards.",
   "type": "object",
   "required": [
     "format",
-    "version",
+    "version", 
     "bpm",
-    "audioGraph",
-    "connections",
     "sequences"
   ],
   "properties": {
@@ -41,8 +39,15 @@
         "properties": {
           "time": {
             "oneOf": [
-              { "type": "string" },
-              { "type": "number" }
+              { 
+                "type": "string", 
+                "pattern": "^\\d+:\\d+(\\.\\d+)?:\\d+$",
+                "description": "Musical time in bars:beats:ticks format (e.g., '2:0:0')."
+              },
+              { 
+                "type": "number", 
+                "description": "Legacy: Time in beats (deprecated)." 
+              }
             ],
             "description": "Time of the key signature change."
           },
@@ -69,8 +74,15 @@
         "properties": {
           "time": {
             "oneOf": [
-              { "type": "string" },
-              { "type": "number" }
+              { 
+                "type": "string", 
+                "pattern": "^\\d+:\\d+(\\.\\d+)?:\\d+$",
+                "description": "Musical time in bars:beats:ticks format (e.g., '4:0:0')."
+              },
+              { 
+                "type": "number", 
+                "description": "Legacy: Time in beats (deprecated)." 
+              }
             ],
             "description": "The time point for the tempo change."
           },
@@ -90,8 +102,15 @@
       "properties": {
         "startOffset": {
           "oneOf": [
-            { "type": "string" },
-            { "type": "number" }
+            { 
+              "type": "string", 
+              "pattern": "^\\d+:\\d+(\\.\\d+)?:\\d+$",
+              "description": "Musical time in bars:beats:ticks format (e.g., '0:2:0')."
+            },
+            { 
+              "type": "number", 
+              "description": "Legacy: Time in beats (deprecated)." 
+            }
           ],
           "description": "Offset for when playback should start."
         },
@@ -101,7 +120,8 @@
         },
         "globalLoopEnd": {
           "type": "string",
-          "description": "Where (in time) the global loop should end."
+          "pattern": "^\\d+:\\d+(\\.\\d+)?:\\d+$",
+          "description": "Musical time in bars:beats:ticks format where the global loop should end (e.g., '8:0:0')."
         },
         "swing": {
           "type": "number",
@@ -156,7 +176,11 @@
     },
     "audioGraph": {
       "type": "array",
-      "description": "Audio node graph for synthesis.",
+      "description": "Audio node graph for synthesis. If not provided, a default synth->master setup will be created automatically.",
+      "default": [
+        { "id": "synth", "type": "Synth", "options": {} },
+        { "id": "master", "type": "Destination", "options": {} }
+      ],
       "items": {
         "type": "object",
         "required": ["id", "type", "options"],
@@ -615,8 +639,9 @@
       }
     },
     "connections": {
-      "type": "array",
-      "description": "Array of audio graph connections. Each is a two-element array [source, target].",
+      "type": "array", 
+      "description": "Array of audio graph connections. Each is a two-element array [source, target]. If not provided, default connections will be created automatically.",
+      "default": [["synth", "master"]],
       "items": {
         "type": "array",
         "minItems": 2,
@@ -698,14 +723,33 @@
                 },
                 "time": {
                   "oneOf": [
-                    { "type": "string", "description": "Musical time (e.g., '0:2:0', '4n')." },
-                    { "type": "number", "description": "Absolute time in seconds." }
+                    { 
+                      "type": "string", 
+                      "pattern": "^\\d+:\\d+(\\.\\d+)?:\\d+$",
+                      "description": "Musical time in bars:beats:ticks format (e.g., '0:2:0', '1:3.5:240'). Preferred format for precise musical timing."
+                    },
+                    { 
+                      "type": "string", 
+                      "pattern": "^(\\d+n|\\d+t)$",
+                      "description": "Tone.js note values (e.g., '4n', '8t') for relative timing."
+                    },
+                    { 
+                      "type": "number", 
+                      "description": "Legacy: Time in beats (deprecated, use bars:beats:ticks format instead)." 
+                    }
                   ]
                 },
                 "duration": {
                   "oneOf": [
-                    { "type": "string", "description": "Musical duration (e.g., '8n', '1:0:0')." },
-                    { "type": "number", "description": "Duration in seconds." }
+                    { 
+                      "type": "string", 
+                      "pattern": "^(\\d+n|\\d+t|\\d+:\\d+(\\.\\d+)?:\\d+)$",
+                      "description": "Musical duration using Tone.js note values (e.g., '4n', '8n', '2t') or bars:beats:ticks format (e.g., '1:0:0')."
+                    },
+                    { 
+                      "type": "number", 
+                      "description": "Legacy: Duration in seconds (deprecated, use note values instead)." 
+                    }
                   ]
                 },
                 "velocity": {
@@ -750,8 +794,15 @@
                       },
                       "time": {
                         "oneOf": [
-                          { "type": "string", "description": "Relative time (e.g., '8n')." },
-                          { "type": "number", "description": "Relative time in seconds." }
+                          { 
+                            "type": "string", 
+                            "pattern": "^(\\d+n|\\d+t|\\d+:\\d+(\\.\\d+)?:\\d+)$",
+                            "description": "Relative time using note values (e.g., '8n') or bars:beats:ticks (e.g., '0:0:240')."
+                          },
+                          { 
+                            "type": "number", 
+                            "description": "Legacy: Relative time in seconds (deprecated)." 
+                          }
                         ],
                         "description": "When this modulation event happens (relative to note start)."
                       }
@@ -772,7 +823,8 @@
           },
           "loopEnd": {
             "type": "string",
-            "description": "Time (musical or seconds) to end the loop."
+            "pattern": "^\\d+:\\d+(\\.\\d+)?:\\d+$",
+            "description": "Musical time in bars:beats:ticks format to end the loop (e.g., '4:0:0')."
           },
           "effects": {
             "type": "array",
@@ -796,35 +848,82 @@
               },
               "additionalProperties": false
             }
+          },
+          "automation": {
+            "type": "array",
+            "description": "Sequence-level automation channels affecting only this sequence.",
+            "items": {
+              "$ref": "#/definitions/automationChannel"
+            }
           }
         },
         "additionalProperties": false
       }
     },
     "automation": {
-      "type": "array",
-      "description": "Automation events for parameters, including synth, effect, or MIDI modulation.",
-      "items": {
-        "type": "object",
-        "required": [ "target", "time", "value" ],
-        "properties": {
-          "target": {
-            "type": "string",
-            "description": "Parameter to automate, e.g., 'synth.frequency', 'effect.mix', 'midi.cc1', 'midi.pitchBend', 'midi.aftertouch'."
-          },
-          "time": {
-            "oneOf": [
-              { "type": "string", "description": "Musical time (e.g., '2:1:0')." },
-              { "type": "number", "description": "Absolute time in seconds." }
-            ]
-          },
-          "value": {
-            "type": "number",
-            "description": "Target value for the parameter."
+      "type": "object",
+      "description": "Multi-level automation system with interpolation support.",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether automation is enabled globally."
+        },
+        "global": {
+          "type": "array",
+          "description": "Global automation channels affecting the entire composition.",
+          "items": {
+            "$ref": "#/definitions/automationChannel"
           }
         },
-        "additionalProperties": false
-      }
+        "sequences": {
+          "type": "object",
+          "description": "Sequence-level automation channels organized by sequence ID.",
+          "patternProperties": {
+            ".*": {
+              "type": "array",
+              "description": "Automation channels for this sequence.",
+              "items": {
+                "$ref": "#/definitions/automationChannel"
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        "events": {
+          "type": "array",
+          "description": "Legacy automation events (deprecated, use channels instead).",
+          "items": {
+            "type": "object",
+            "required": ["target", "time", "value"],
+            "properties": {
+              "target": {
+                "type": "string",
+                "description": "Parameter to automate, e.g., 'synth.frequency', 'effect.mix', 'midi.cc1'."
+              },
+              "time": {
+                "oneOf": [
+                  { 
+                    "type": "string", 
+                    "pattern": "^\\d+:\\d+(\\.\\d+)?:\\d+$",
+                    "description": "Musical time in bars:beats:ticks format."
+                  },
+                  { 
+                    "type": "number", 
+                    "description": "Legacy: Time in beats (deprecated)." 
+                  }
+                ]
+              },
+              "value": {
+                "type": "number",
+                "description": "Target value for the parameter."
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
     },
     "annotations": {
       "type": "array",
@@ -839,8 +938,15 @@
           },
           "time": {
             "oneOf": [
-              { "type": "string", "description": "Musical time (e.g., '1:2:0')." },
-              { "type": "number", "description": "Absolute time in seconds." }
+              { 
+                "type": "string", 
+                "pattern": "^\\d+:\\d+(\\.\\d+)?:\\d+$",
+                "description": "Musical time in bars:beats:ticks format (e.g., '1:2:0')."
+              },
+              { 
+                "type": "number", 
+                "description": "Legacy: Time in beats (deprecated)." 
+              }
             ]
           },
           "type": {
@@ -849,8 +955,15 @@
           },
           "duration": {
             "oneOf": [
-              { "type": "string", "description": "Musical duration." },
-              { "type": "number", "description": "Duration in seconds." }
+              { 
+                "type": "string", 
+                "pattern": "^(\\d+n|\\d+t|\\d+:\\d+(\\.\\d+)?:\\d+)$",
+                "description": "Musical duration using note values (e.g., '4n') or bars:beats:ticks (e.g., '1:0:0')."
+              },
+              { 
+                "type": "number", 
+                "description": "Legacy: Duration in seconds (deprecated)." 
+              }
             ],
             "description": "Optional duration for annotation (e.g., for lyrics or extended comments)."
           }
@@ -867,8 +980,15 @@
         "properties": {
           "time": {
             "oneOf": [
-              { "type": "string" },
-              { "type": "number" }
+              { 
+                "type": "string", 
+                "pattern": "^\\d+:\\d+(\\.\\d+)?:\\d+$",
+                "description": "Musical time in bars:beats:ticks format (e.g., '8:0:0')."
+              },
+              { 
+                "type": "number", 
+                "description": "Legacy: Time in beats (deprecated)." 
+              }
             ],
             "description": "Time of the time signature change."
           },
@@ -1003,6 +1123,89 @@
       "additionalProperties": false
     }
   },
+  "definitions": {
+    "automationChannel": {
+      "type": "object",
+      "description": "Automation channel with interpolation support and anchor points.",
+      "required": ["id", "target", "anchorPoints"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for this automation channel."
+        },
+        "name": {
+          "type": "string", 
+          "description": "Human-readable name for this automation channel."
+        },
+        "target": {
+          "type": "string",
+          "description": "JMON target parameter (e.g., 'synth.frequency', 'midi.cc1', 'effect.mix')."
+        },
+        "level": {
+          "type": "string",
+          "enum": ["global", "sequence", "note"],
+          "default": "global",
+          "description": "Automation level: global (entire composition), sequence (per track), or note (per note velocity)."
+        },
+        "sequenceId": {
+          "type": "string",
+          "description": "Target sequence ID for sequence-level automation."
+        },
+        "range": {
+          "type": "array",
+          "items": { "type": "number" },
+          "minItems": 2,
+          "maxItems": 2,
+          "default": [0, 127],
+          "description": "Value range [min, max] for this automation parameter."
+        },
+        "interpolation": {
+          "type": "string",
+          "enum": ["linear", "quadratic", "cubic", "daw"],
+          "default": "daw",
+          "description": "Interpolation type: linear, quadratic (curve), cubic (smoothstep), or daw (Hermite splines)."
+        },
+        "enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether this automation channel is enabled."
+        },
+        "anchorPoints": {
+          "type": "array",
+          "description": "Automation anchor points defining the curve.",
+          "items": {
+            "type": "object",
+            "required": ["time", "value"],
+            "properties": {
+              "time": {
+                "oneOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^\\d+:\\d+(\\.\\d+)?:\\d+$",
+                    "description": "Musical time in bars:beats:ticks format (e.g., '2:1:240')."
+                  },
+                  {
+                    "type": "number",
+                    "description": "Time in measures (e.g., 2.5 = 2 bars + 2 beats in 4/4)."
+                  }
+                ]
+              },
+              "value": {
+                "type": "number",
+                "description": "Automation value at this time point."
+              },
+              "tangent": {
+                "type": "number",
+                "description": "Optional tangent/slope for Hermite interpolation (DAW mode)."
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  },
   "additionalProperties": false,
   "examples": [
     {
@@ -1024,26 +1227,88 @@
           "notes": [
             {
               "note": "C4",
-              "time": 0,
-              "duration": 2,
+              "time": "0:0:0",
+              "duration": "2n",
               "velocity": 0.8,
               "modulations": [
-                { "type": "pitchBend", "value": -4096, "time": 0 },
-                { "type": "pitchBend", "value": 4096, "time": 1.5 }
+                { "type": "pitchBend", "value": -4096, "time": "0:0:0" },
+                { "type": "pitchBend", "value": 4096, "time": "0:1.5:0" }
               ]
             },
             {
               "note": "G4",
-              "time": 2,
-              "duration": 2,
+              "time": "0:2:0",
+              "duration": "2n",
               "velocity": 0.8,
               "modulations": [
-                { "type": "cc", "controller": 1, "value": 0, "time": 0 },
-                { "type": "cc", "controller": 1, "value": 127, "time": 1.5 }
+                { "type": "cc", "controller": 1, "value": 0, "time": "0:0:0" },
+                { "type": "cc", "controller": 1, "value": 127, "time": "0:1.5:0" }
               ]
             }
           ]
         }]
+      }
+    },
+    {
+      "description": "Multi-level automation example with interpolation",
+      "composition": {
+        "format": "jmonTone",
+        "version": "1.0",
+        "bpm": 120,
+        "audioGraph": [
+          { "id": "master", "type": "Destination", "options": {} },
+          { "id": "reverb", "type": "Reverb", "options": { "wet": 0.3 } }
+        ],
+        "connections": [
+          ["reverb", "master"]
+        ],
+        "automation": {
+          "enabled": true,
+          "global": [
+            {
+              "id": "master-volume",
+              "name": "Master Volume",
+              "target": "synth.volume",
+              "level": "global",
+              "range": [0, 1],
+              "interpolation": "cubic",
+              "anchorPoints": [
+                { "time": "0:0:0", "value": 0 },
+                { "time": "2:0:0", "value": 0.8 },
+                { "time": "6:0:0", "value": 0.6 },
+                { "time": "8:0:0", "value": 0 }
+              ]
+            }
+          ],
+          "sequences": {
+            "lead": [
+              {
+                "id": "lead-filter",
+                "name": "Lead Filter Sweep",
+                "target": "synth.filter.frequency",
+                "level": "sequence",
+                "sequenceId": "lead",
+                "range": [200, 8000],
+                "interpolation": "daw",
+                "anchorPoints": [
+                  { "time": "0:0:0", "value": 200, "tangent": 0 },
+                  { "time": "1:0:0", "value": 2000, "tangent": 1.5 },
+                  { "time": "3:0:0", "value": 8000, "tangent": 0 }
+                ]
+              }
+            ]
+          }
+        },
+        "sequences": [
+          {
+            "label": "lead",
+            "notes": [
+              { "note": "C4", "time": "0:0:0", "duration": "1n", "velocity": 0.8 },
+              { "note": "E4", "time": "1:0:0", "duration": "1n", "velocity": 0.7 },
+              { "note": "G4", "time": "2:0:0", "duration": "1n", "velocity": 0.9 }
+            ]
+          }
+        ]
       }
     },
     {
@@ -1064,12 +1329,12 @@
           },
           "notes": [{
             "note": "A4",
-            "time": 0,
-            "duration": 4,
+            "time": "0:0:0",
+            "duration": "1n",
             "velocity": 0.8,
             "modulations": [
-              { "type": "cc", "controller": 1, "value": 0, "time": 0 },
-              { "type": "cc", "controller": 1, "value": 127, "time": 3 }
+              { "type": "cc", "controller": 1, "value": 0, "time": "0:0:0" },
+              { "type": "cc", "controller": 1, "value": 127, "time": "0:3:0" }
             ]
           }]
         }]

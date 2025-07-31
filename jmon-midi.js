@@ -19,7 +19,7 @@ class JmonToMidi {
      * @param {Object} composition - jmon composition object
     /**
      * Convert a jmon composition to MIDI format
-     * @param {Object} composition - jmon composition object
+     * @param {Object} composition - jmon composition object or any compatible format
      * @returns {Object} Tone.js Midi object
      */
     static convertToMidi(composition) {
@@ -32,8 +32,11 @@ class JmonToMidi {
             throw new Error('jmonTone library is required. Make sure jmon-tone.js is loaded.');
         }
         
-        // Validate jmon composition
-        if (!jmonTone.validate(composition).success) {
+        // Smart normalize: convert various formats to jmon
+        const normalizedComposition = jmonTone.normalize(composition);
+        
+        // Validate normalized jmon composition
+        if (!jmonTone.validate(normalizedComposition).success) {
             throw new Error('Invalid jmon composition');
         }
 
@@ -88,26 +91,36 @@ class JmonToMidi {
                 return jmonTone.parseTimeString(timeStr, bpm);
             }
             
-            // Simple fallback parsing for common formats
+            // Enhanced bars:beats:ticks format support (e.g., "2:1:240")
             if (timeStr.includes(':')) {
-                // Format: "bar:beat:subdivision" or similar
-                const parts = timeStr.split(':').map(Number);
-                const beatsPerBar = 4; // Assume 4/4 for simplicity
+                const parts = timeStr.split(':').map(parseFloat);
+                const bars = parts[0] || 0;
+                const beats = parts[1] || 0;
+                const ticks = parts[2] || 0;
+                
                 const beatValue = 60 / bpm; // seconds per beat
+                const beatsPerBar = 4; // Assume 4/4 for simplicity
+                const ticksPerBeat = 480; // Standard MIDI ticks per quarter note
                 
-                let totalTime = 0;
-                if (parts[0]) totalTime += parts[0] * beatsPerBar * beatValue; // bars
-                if (parts[1]) totalTime += parts[1] * beatValue; // beats
-                if (parts[2]) totalTime += parts[2] * beatValue / 4; // subdivisions (assuming quarters)
-                
-                return totalTime;
+                return bars * beatsPerBar * beatValue + 
+                       beats * beatValue + 
+                       ticks * (beatValue / ticksPerBeat);
             }
             
-            // Note values: "4n" = quarter note, "8n" = eighth note, etc.
-            if (timeStr.includes('n')) {
+            // Handle Tone.js note values and triplets
+            if (timeStr.match(/^\d+[nthqm]$/)) {
                 const noteValue = parseInt(timeStr);
+                const noteType = timeStr.slice(-1);
                 const beatValue = 60 / bpm;
-                return beatValue * (4 / noteValue);
+                
+                switch (noteType) {
+                    case 'n': return beatValue * (4 / noteValue); // note values
+                    case 't': return beatValue * (4 / noteValue) * (2/3); // triplets
+                    case 'h': return beatValue * 2; // half note
+                    case 'q': return beatValue; // quarter note
+                    case 'm': return beatValue * 4 * noteValue; // measures
+                    default: return beatValue;
+                }
             }
             
             return parseFloat(timeStr) || 0;
@@ -150,13 +163,13 @@ class JmonToMidi {
         const header = getHeader(midi);
         header.tempos = [{
             time: 0,
-            bpm: composition.bpm || 120
+            bpm: normalizedComposition.bpm || 120
         }];
 
         // Add tempo map if present
-        if (composition.tempoMap && composition.tempoMap.length > 0) {
-            composition.tempoMap.forEach(tempoChange => {
-                const time = parseTime(tempoChange.time, composition.bpm || 120);
+        if (normalizedComposition.tempoMap && normalizedComposition.tempoMap.length > 0) {
+            normalizedComposition.tempoMap.forEach(tempoChange => {
+                const time = parseTime(tempoChange.time, normalizedComposition.bpm || 120);
                 
                 header.tempos.push({
                     time: time,
@@ -166,8 +179,8 @@ class JmonToMidi {
         }
 
         // Add time signatures
-        if (composition.timeSignature) {
-            const [numerator, denominator] = composition.timeSignature.split('/').map(Number);
+        if (normalizedComposition.timeSignature) {
+            const [numerator, denominator] = normalizedComposition.timeSignature.split('/').map(Number);
             getHeader(midi).timeSignatures = [{
                 time: 0,
                 timeSignature: [numerator, denominator]
@@ -175,9 +188,9 @@ class JmonToMidi {
         }
 
         // Add time signature map if present
-        if (composition.timeSignatureMap && composition.timeSignatureMap.length > 0) {
-            composition.timeSignatureMap.forEach(timeSigChange => {
-                const time = parseTime(timeSigChange.time, composition.bpm || 120);
+        if (normalizedComposition.timeSignatureMap && normalizedComposition.timeSignatureMap.length > 0) {
+            normalizedComposition.timeSignatureMap.forEach(timeSigChange => {
+                const time = parseTime(timeSigChange.time, normalizedComposition.bpm || 120);
                 
                 const [numerator, denominator] = timeSigChange.timeSignature.split('/').map(Number);
                 
@@ -189,17 +202,17 @@ class JmonToMidi {
         }
 
         // Add key signature if present
-        if (composition.keySignature) {
+        if (normalizedComposition.keySignature) {
             getHeader(midi).keySignatures = [{
                 time: 0,
-                key: composition.keySignature
+                key: normalizedComposition.keySignature
             }];
         }
 
         // Add key signature map if present
-        if (composition.keySignatureMap && composition.keySignatureMap.length > 0) {
-            composition.keySignatureMap.forEach(keyChange => {
-                const time = parseTime(keyChange.time, composition.bpm || 120);
+        if (normalizedComposition.keySignatureMap && normalizedComposition.keySignatureMap.length > 0) {
+            normalizedComposition.keySignatureMap.forEach(keyChange => {
+                const time = parseTime(keyChange.time, normalizedComposition.bpm || 120);
                 
                 getHeader(midi).keySignatures.push({
                     time: time,
@@ -209,7 +222,7 @@ class JmonToMidi {
         }
 
         // Convert sequences to MIDI tracks
-        composition.sequences.forEach((sequence, index) => {
+        normalizedComposition.sequences.forEach((sequence, index) => {
             // In Tone.js, we need to add tracks to the tracks array
             if (!midi.tracks) {
                 midi.tracks = [];
@@ -227,7 +240,8 @@ class JmonToMidi {
             midi.tracks.push(track);
             
             // Set default MIDI channel
-            const defaultChannel = sequence.midiChannel || 0;
+            const defaultChannel = sequence.midiChannel || 
+                                 normalizedComposition.converterHints?.midi?.channel || 0;
             
             // Add instrument/program change if synth type is specified
             if (sequence.synth && sequence.synth.type) {
@@ -253,8 +267,8 @@ class JmonToMidi {
 
             // Convert notes
             sequence.notes.forEach(note => {
-                const startTime = parseTime(note.time, composition.bpm || 120);
-                const duration = parseTime(note.duration, composition.bpm || 120);
+                const startTime = parseTime(note.time, normalizedComposition.bpm || 120);
+                const duration = parseTime(note.duration, normalizedComposition.bpm || 120);
 
                 const velocity = note.velocity ? Math.round(note.velocity * 127) : 100;
                 const channel = note.channel !== undefined ? note.channel : defaultChannel;
@@ -306,7 +320,7 @@ class JmonToMidi {
                 // Add modulation events
                 if (note.modulations && Array.isArray(note.modulations)) {
                     note.modulations.forEach(mod => {
-                        const modTime = startTime + parseTime(mod.time, composition.bpm || 120);
+                        const modTime = startTime + parseTime(mod.time, normalizedComposition.bpm || 120);
 
                         switch (mod.type) {
                             case 'cc':
@@ -346,56 +360,77 @@ class JmonToMidi {
         });
 
         // Add global automation events as MIDI CC
-        if (composition.automation && composition.automation.length > 0) {
-            composition.automation.forEach(auto => {
-                const time = parseTime(auto.time, composition.bpm || 120);
-
-                // Parse automation target to determine MIDI message type
-                if (auto.target.startsWith('midi.cc')) {
-                    const ccNumber = parseInt(auto.target.replace('midi.cc', ''));
-                    if (!isNaN(ccNumber) && ccNumber >= 0 && ccNumber <= 127) {
-                        // Add to first track (or create a dedicated automation track)
-                        const track = midi.tracks[0];
-                        if (track) {
-                            if (!track.controlChanges[ccNumber]) {
-                                track.controlChanges[ccNumber] = [];
+        if (normalizedComposition.automation) {
+            // Handle new automation format with channels and anchor points
+            if (normalizedComposition.automation.global && Array.isArray(normalizedComposition.automation.global)) {
+                normalizedComposition.automation.global.forEach(channel => {
+                    if (channel.anchorPoints && Array.isArray(channel.anchorPoints)) {
+                        channel.anchorPoints.forEach(point => {
+                            const time = parseTime(point.time, normalizedComposition.bpm || 120);
+                            
+                            // Parse automation target to determine MIDI message type
+                            if (channel.target.startsWith('midi.cc')) {
+                                const ccNumber = parseInt(channel.target.replace('midi.cc', ''));
+                                if (!isNaN(ccNumber) && ccNumber >= 0 && ccNumber <= 127) {
+                                    const track = midi.tracks[0];
+                                    if (track) {
+                                        if (!track.controlChanges[ccNumber]) {
+                                            track.controlChanges[ccNumber] = [];
+                                        }
+                                        // Map value from automation range to MIDI range (0-127)
+                                        const [minRange, maxRange] = channel.range || [0, 127];
+                                        const midiValue = Math.round((point.value - minRange) / (maxRange - minRange) * 127);
+                                        track.controlChanges[ccNumber].push({
+                                            time: time,
+                                            value: Math.max(0, Math.min(127, midiValue)),
+                                            channel: 0
+                                        });
+                                    }
+                                }
+                            } else if (channel.target === 'midi.pitchBend') {
+                                const track = midi.tracks[0];
+                                if (track) {
+                                    track.pitchBends.push({
+                                        time: time,
+                                        value: Math.round(point.value),
+                                        channel: 0
+                                    });
+                                }
                             }
-                            track.controlChanges[ccNumber].push({
-                                time: time,
-                                value: Math.round(auto.value),
-                                channel: 0 // Default channel
-                            });
-                        }
-                    }
-                } else if (auto.target === 'midi.pitchBend') {
-                    const track = midi.tracks[0];
-                    if (track) {
-                        track.pitchBends.push({
-                            time: time,
-                            value: Math.round(auto.value),
-                            channel: 0
                         });
                     }
-                } else if (auto.target === 'midi.aftertouch') {
-                    const track = midi.tracks[0];
-                    if (track) {
-                        if (!track.aftertouch) {
-                            track.aftertouch = [];
+                });
+            }
+            
+            // Handle legacy automation format for backwards compatibility
+            if (normalizedComposition.automation.events && Array.isArray(normalizedComposition.automation.events)) {
+                normalizedComposition.automation.events.forEach(auto => {
+                    const time = parseTime(auto.time, normalizedComposition.bpm || 120);
+
+                    if (auto.target.startsWith('midi.cc')) {
+                        const ccNumber = parseInt(auto.target.replace('midi.cc', ''));
+                        if (!isNaN(ccNumber) && ccNumber >= 0 && ccNumber <= 127) {
+                            const track = midi.tracks[0];
+                            if (track) {
+                                if (!track.controlChanges[ccNumber]) {
+                                    track.controlChanges[ccNumber] = [];
+                                }
+                                track.controlChanges[ccNumber].push({
+                                    time: time,
+                                    value: Math.round(auto.value),
+                                    channel: 0
+                                });
+                            }
                         }
-                        track.aftertouch.push({
-                            time: time,
-                            value: Math.round(auto.value),
-                            channel: 0
-                        });
                     }
-                }
-            });
+                });
+            }
         }
 
         // Add text events from annotations
-        if (composition.annotations && composition.annotations.length > 0) {
-            composition.annotations.forEach(annotation => {
-                const time = parseTime(annotation.time, composition.bpm || 120);
+        if (normalizedComposition.annotations && normalizedComposition.annotations.length > 0) {
+            normalizedComposition.annotations.forEach(annotation => {
+                const time = parseTime(annotation.time, normalizedComposition.bpm || 120);
 
                 // Add to first track
                 const track = midi.tracks[0];
@@ -438,7 +473,7 @@ class JmonToMidi {
         }
 
         // Add metadata
-        if (composition.metadata) {
+        if (normalizedComposition.metadata) {
             const track = midi.tracks[0];
             
             if (track) {
@@ -446,26 +481,26 @@ class JmonToMidi {
                     track.textEvents = [];
                 }
                 
-                if (composition.metadata.name) {
+                if (normalizedComposition.metadata.name) {
                     track.textEvents.push({
                         time: 0,
-                        text: `Title: ${composition.metadata.name}`,
+                        text: `Title: ${normalizedComposition.metadata.name}`,
                         type: 'text'
                     });
                 }
                 
-                if (composition.metadata.author) {
+                if (normalizedComposition.metadata.author) {
                     track.textEvents.push({
                         time: 0,
-                        text: `Composer: ${composition.metadata.author}`,
+                        text: `Composer: ${normalizedComposition.metadata.author}`,
                         type: 'text'
                     });
                 }
                 
-                if (composition.metadata.description) {
+                if (normalizedComposition.metadata.description) {
                     track.textEvents.push({
                         time: 0,
-                        text: `Description: ${composition.metadata.description}`,
+                        text: `Description: ${normalizedComposition.metadata.description}`,
                         type: 'text'
                     });
                 }

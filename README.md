@@ -1,3 +1,7 @@
+TODO
+- Ajuster pour un time strict "bar:beat:tick"
+
+
 # jmon: JSON Musical Object Notation
 
 **jmon** (JSON Musical Object Notation) is a declarative, human-readable JSON format for describing musical compositions. It provides a powerful, backend-agnostic way to represent multi-track music with advanced features like modular audio routing, real-time effects, MIDI modulation, and complex timing.

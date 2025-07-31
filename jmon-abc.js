@@ -33,10 +33,33 @@ class JmonToAbc {
             // Fallback parsing
         }
         
-        // Simple fallback for common time formats
+        // Enhanced bars:beats:ticks format support (e.g., "2:1:240")
         if (timeString.includes(':')) {
-            const parts = timeString.split(':').map(Number);
-            return parts[0] + (parts[1] || 0) / 4; // Simple bars:beats conversion
+            const parts = timeString.split(':').map(parseFloat);
+            const bars = parts[0] || 0;
+            const beats = parts[1] || 0;
+            const ticks = parts[2] || 0;
+            
+            const beatLength = 60 / bpm; // seconds per beat
+            const barLength = beatLength * 4; // Assuming 4/4 time
+            const tickLength = beatLength / 480; // Standard MIDI ticks per quarter note
+            
+            return bars * barLength + beats * beatLength + ticks * tickLength;
+        }
+        
+        // Handle Tone.js note values (4n, 8n, etc.)
+        if (timeString.match(/^\d+[nthq]$/)) {
+            const noteValue = parseInt(timeString);
+            const noteType = timeString.slice(-1);
+            const beatLength = 60 / bpm;
+            
+            switch (noteType) {
+                case 'n': return beatLength * (4 / noteValue); // note values
+                case 't': return beatLength * (4 / noteValue) * (2/3); // triplets
+                case 'h': return beatLength * 2; // half note
+                case 'q': return beatLength; // quarter note
+                default: return beatLength;
+            }
         }
         
         return parseFloat(timeString) || 0;
@@ -44,36 +67,39 @@ class JmonToAbc {
 
     /**
      * Convert a jmon composition to ABC notation
-     * @param {Object} composition - jmon composition object
+     * @param {Object} composition - jmon composition object or any compatible format
      * @returns {string} ABC notation string
      */
     static convertToAbc(composition) {
-        // Validate jmon composition
-        if (!jmonTone.validate(composition).success) {
+        // Smart normalize: convert various formats to jmon
+        const normalizedComposition = jmonTone ? jmonTone.normalize(composition) : composition;
+        
+        // Validate normalized jmon composition
+        if (jmonTone && !jmonTone.validate(normalizedComposition).success) {
             throw new Error('Invalid jmon composition');
         }
 
         let abc = '';
         // ABC Header
-        abc += this.generateAbcHeader(composition);
+        abc += this.generateAbcHeader(normalizedComposition);
 
         // Multi-voice: ajouter %%score et déclarations V: dans l'en-tête
-        if (composition.sequences && composition.sequences.length > 1) {
+        if (normalizedComposition.sequences && normalizedComposition.sequences.length > 1) {
             // Déclaration des voix
-            composition.sequences.forEach((sequence, index) => {
+            normalizedComposition.sequences.forEach((sequence, index) => {
                 abc += `V:${index + 1} name=\"${sequence.label || `Voice ${index + 1}`}\"\n`;
             });
             // Ligne %%score
-            const scoreLine = '%%score ' + composition.sequences.map((_, i) => `V:${i+1}`).join(' ');
+            const scoreLine = '%%score ' + normalizedComposition.sequences.map((_, i) => `V:${i+1}`).join(' ');
             abc += scoreLine + '\n';
         }
 
         // Génération des voix/tracks
-        if (composition.sequences && composition.sequences.length > 0) {
-            if (composition.sequences.length > 1) {
-                abc += this.generateMultiVoiceAbc(composition);
+        if (normalizedComposition.sequences && normalizedComposition.sequences.length > 0) {
+            if (normalizedComposition.sequences.length > 1) {
+                abc += this.generateMultiVoiceAbc(normalizedComposition);
             } else {
-                abc += this.generateSingleVoiceAbc(composition.sequences[0], composition);
+                abc += this.generateSingleVoiceAbc(normalizedComposition.sequences[0], normalizedComposition);
             }
         }
         return abc;
@@ -118,9 +144,25 @@ class JmonToAbc {
         const bpm = composition.bpm || 120;
         header += `Q:1/4=${bpm}\n`;
         
+        // Add tempo changes as comments if present
+        if (composition.tempoMap && composition.tempoMap.length > 0) {
+            header += '% Tempo changes:\n';
+            composition.tempoMap.forEach(change => {
+                header += `% Time ${change.time}: ${change.bpm} BPM\n`;
+            });
+        }
+        
         // Key signature (MUST be last in header)
         const keySignature = composition.keySignature || 'C';
         header += `K:${this.convertKeySignature(keySignature)}\n`;
+        
+        // Add key changes as comments if present
+        if (composition.keySignatureMap && composition.keySignatureMap.length > 0) {
+            header += '% Key changes:\n';
+            composition.keySignatureMap.forEach(change => {
+                header += `% Time ${change.time}: ${this.convertKeySignature(change.keySignature)}\n`;
+            });
+        }
         
         return header;
     }
@@ -308,17 +350,22 @@ class JmonToAbc {
         }
 
         // Add ornaments based on modulations (place after note)
-        if (note.modulations) {
+        if (note.modulations && Array.isArray(note.modulations)) {
             note.modulations.forEach(mod => {
                 if (mod.type === 'cc' && mod.controller === 1) {
-                    // Modulation wheel - interpret as vibrato
+                    // Modulation wheel - interpret as vibrato/trill
                     if (mod.value > 64) {
                         abcNote += '!trill!';
                     }
                 } else if (mod.type === 'pitchBend') {
                     // Pitch bend - add slide notation
-                    if (mod.value > 0) {
-                        abcNote += '!slide!';
+                    if (Math.abs(mod.value) > 1000) { // Significant pitch bend
+                        abcNote += mod.value > 0 ? '!slide!' : '!bend!';
+                    }
+                } else if (mod.type === 'aftertouch') {
+                    // Aftertouch - interpret as accent or emphasis
+                    if (mod.value > 64) {
+                        abcNote += '!emphasis!';
                     }
                 }
             });
@@ -537,21 +584,21 @@ class JmonToAbc {
 
     /**
      * Generate ABC notation with lyrics from annotations
-     * @param {Object} composition - jmon composition with annotations
+     * @param {Object} composition - jmon composition with annotations or any compatible format
      * @returns {string} ABC notation with lyrics
      */
     static convertWithLyrics(composition) {
+        // Smart normalize: convert various formats to jmon
+        const normalizedComposition = jmonTone ? jmonTone.normalize(composition) : composition;
         let abc = this.convertToAbc(composition);
         
         // Add lyrics from annotations
-        if (composition.annotations) {
-            const lyrics = composition.annotations
+        if (normalizedComposition.annotations && Array.isArray(normalizedComposition.annotations)) {
+            const lyrics = normalizedComposition.annotations
                 .filter(ann => ann.type === 'lyric')
                 .sort((a, b) => {
-                    const timeA = typeof a.time === 'string' ? 
-                        jmonTone._parseTimeString(a.time, composition.bpm || 120) : a.time;
-                    const timeB = typeof b.time === 'string' ? 
-                        jmonTone._parseTimeString(b.time, composition.bpm || 120) : b.time;
+                    const timeA = this.parseTimeString(a.time, normalizedComposition.bpm || 120);
+                    const timeB = this.parseTimeString(b.time, normalizedComposition.bpm || 120);
                     return timeA - timeB;
                 });
                 
@@ -562,6 +609,22 @@ class JmonToAbc {
                     abc += lyric.text;
                 });
                 abc += '\n';
+            }
+            
+            // Add rehearsal marks and comments
+            const markers = normalizedComposition.annotations
+                .filter(ann => ann.type === 'marker' || ann.type === 'rehearsal')
+                .sort((a, b) => {
+                    const timeA = this.parseTimeString(a.time, normalizedComposition.bpm || 120);
+                    const timeB = this.parseTimeString(b.time, normalizedComposition.bpm || 120);
+                    return timeA - timeB;
+                });
+            
+            if (markers.length > 0) {
+                abc += '\n% Rehearsal marks and markers:\n';
+                markers.forEach(marker => {
+                    abc += `% Time ${marker.time}: ${marker.text}\n`;
+                });
             }
         }
         

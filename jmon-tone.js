@@ -87,6 +87,160 @@ class jmonTone {
     }
 
     /**
+     * Smart conversion of various input formats to jmon format
+     * @param {object|array} input - Various input formats
+     * @returns {object} Normalized jmon composition
+     */
+    static normalize(input) {
+        // If already a valid jmon object, return as-is
+        if (input.format === this.FORMAT_IDENTIFIER) {
+            return input;
+        }
+
+        let normalized = {
+            format: this.FORMAT_IDENTIFIER,
+            version: this.VERSION,
+            bpm: 120,
+            audioGraph: [
+                { id: "synth", type: "Synth", options: {} },
+                { id: "master", type: "Destination", options: {} }
+            ],
+            connections: [["synth", "master"]],
+            sequences: []
+        };
+
+        // Handle different input formats
+        if (Array.isArray(input)) {
+            // Format: [{ pitch: 60, duration: 1.0, time: 0.0 }, ...]
+            normalized.sequences = [{
+                label: "sequence",
+                synthRef: "synth",
+                notes: this.convertNotes(input)
+            }];
+        } else if (input.tracks) {
+            // Format: { tracks: { melody: [...], bass: [...] } }
+            normalized.metadata = { name: input.title || "Untitled" };
+            normalized.bpm = input.bpm || input.tempo || 120;
+            
+            normalized.sequences = Object.entries(input.tracks).map(([trackName, notes]) => ({
+                label: trackName,
+                synthRef: "synth",
+                notes: this.convertNotes(notes)
+            }));
+        } else if (input.sequences || input.parts || input.tracks) {
+            // Handle various sequence/parts naming
+            const sequences = input.sequences || input.parts || input.tracks;
+            
+            if (Array.isArray(sequences)) {
+                normalized.sequences = sequences.map((seq, index) => ({
+                    label: seq.label || seq.name || `sequence${index}`,
+                    synthRef: seq.synthRef || "synth",
+                    notes: this.convertNotes(seq.notes || seq)
+                }));
+            }
+        } else {
+            // Single track format
+            const notes = input.notes || input.melody || input;
+            if (Array.isArray(notes)) {
+                normalized.sequences = [{
+                    label: input.title || input.name || "sequence",
+                    synthRef: "synth", 
+                    notes: this.convertNotes(notes)
+                }];
+            }
+        }
+
+        // Copy over any additional metadata
+        if (input.title) normalized.metadata = { ...normalized.metadata, name: input.title };
+        if (input.author || input.composer) normalized.metadata = { ...normalized.metadata, author: input.author || input.composer };
+        if (input.bpm || input.tempo) normalized.bpm = input.bpm || input.tempo;
+        if (input.key || input.keySignature) normalized.keySignature = input.key || input.keySignature;
+
+        return normalized;
+    }
+
+    /**
+     * Convert various note formats to jmon note format
+     * @param {array} notes - Array of notes in various formats
+     * @returns {array} Normalized jmon notes
+     */
+    static convertNotes(notes) {
+        if (!Array.isArray(notes)) return [];
+
+        return notes.map(note => {
+            const normalized = {
+                time: 0,
+                duration: "4n",
+                velocity: 0.8
+            };
+
+            // Handle different note formats
+            if (typeof note === 'object') {
+                // Convert pitch/note field
+                if (note.pitch !== undefined) {
+                    if (typeof note.pitch === 'number') {
+                        // MIDI number to note name
+                        normalized.note = this.midiNoteToNoteName(note.pitch);
+                    } else {
+                        normalized.note = note.pitch;
+                    }
+                } else if (note.note !== undefined) {
+                    normalized.note = note.note;
+                } else if (note.frequency !== undefined) {
+                    // Convert frequency to note name (approximate)
+                    const midiNote = Math.round(12 * Math.log2(note.frequency / 440) + 69);
+                    normalized.note = this.midiNoteToNoteName(midiNote);
+                }
+
+                // Convert time
+                if (note.time !== undefined) {
+                    if (typeof note.time === 'number') {
+                        // Convert beats to bars:beats:ticks format
+                        const bars = Math.floor(note.time / 4);
+                        const beats = note.time % 4;
+                        normalized.time = `${bars}:${beats}:0`;
+                    } else {
+                        normalized.time = note.time;
+                    }
+                } else if (note.start !== undefined) {
+                    normalized.time = note.start;
+                }
+
+                // Convert duration
+                if (note.duration !== undefined) {
+                    if (typeof note.duration === 'number') {
+                        // Convert numeric duration to note value
+                        if (note.duration === 0.25) normalized.duration = "16n";
+                        else if (note.duration === 0.5) normalized.duration = "8n";
+                        else if (note.duration === 1) normalized.duration = "4n";
+                        else if (note.duration === 2) normalized.duration = "2n";
+                        else if (note.duration === 4) normalized.duration = "1n";
+                        else normalized.duration = `${note.duration}n`;
+                    } else {
+                        normalized.duration = note.duration;
+                    }
+                } else if (note.length !== undefined) {
+                    normalized.duration = note.length;
+                }
+
+                // Convert velocity/volume
+                if (note.velocity !== undefined) {
+                    normalized.velocity = typeof note.velocity === 'number' ? 
+                        (note.velocity > 1 ? note.velocity / 127 : note.velocity) : 0.8;
+                } else if (note.volume !== undefined) {
+                    normalized.velocity = note.volume;
+                }
+
+                // Copy other properties
+                if (note.channel !== undefined) normalized.channel = note.channel;
+                if (note.modulations) normalized.modulations = note.modulations;
+            }
+
+            return normalized;
+        });
+    }
+
+    /**
      * Validate a jmonTone composition object against the new schema
      * @param {object} composition - jmonTone composition to validate
      * @returns {object} Validation result with success flag and errors
@@ -112,10 +266,8 @@ class jmonTone {
             warnings.push("BPM should be between 20-400 according to schema");
         }
 
-        // NEW: Check required audioGraph
-        if (!composition.audioGraph || !Array.isArray(composition.audioGraph)) {
-            errors.push("Missing required field: audioGraph");
-        } else {
+        // Check audioGraph (now optional with smart defaults)
+        if (composition.audioGraph && Array.isArray(composition.audioGraph)) {
             // Validate audioGraph nodes
             composition.audioGraph.forEach((node, index) => {
                 if (!node.id) {
@@ -124,20 +276,43 @@ class jmonTone {
                 if (!node.type) {
                     errors.push(`AudioGraph node ${index}: Missing required field: type`);
                 }
-                if (!node.options) {
+                if (node.options === undefined) {
                     errors.push(`AudioGraph node ${index}: Missing required field: options`);
+                }
+                // Validate node type against schema enum
+                const validNodeTypes = [
+                    "Synth", "PolySynth", "MonoSynth", "AMSynth", "FMSynth", "DuoSynth", 
+                    "PluckSynth", "NoiseSynth", "Sampler", "Filter", "AutoFilter", "Reverb", 
+                    "FeedbackDelay", "PingPongDelay", "Delay", "Chorus", "Phaser", "Tremolo", 
+                    "Vibrato", "AutoWah", "Distortion", "Chebyshev", "BitCrusher", "Compressor", 
+                    "Limiter", "Gate", "FrequencyShifter", "PitchShift", "JCReverb", "Freeverb", 
+                    "StereoWidener", "MidSideCompressor", "Destination"
+                ];
+                if (!validNodeTypes.includes(node.type)) {
+                    warnings.push(`AudioGraph node ${index}: Unknown node type "${node.type}"`);
                 }
             });
         }
 
-        // NEW: Check required connections
-        if (!composition.connections || !Array.isArray(composition.connections)) {
-            errors.push("Missing required field: connections");
-        } else {
+        // Check connections (now optional with smart defaults)
+        if (composition.connections && Array.isArray(composition.connections)) {
             // Validate connections format
             composition.connections.forEach((connection, index) => {
                 if (!Array.isArray(connection) || connection.length !== 2) {
                     errors.push(`Connection ${index}: Must be an array with exactly 2 elements [source, target]`);
+                } else {
+                    // Validate that referenced nodes exist
+                    const [source, target] = connection;
+                    if (composition.audioGraph) {
+                        const sourceExists = composition.audioGraph.some(node => node.id === source);
+                        const targetExists = composition.audioGraph.some(node => node.id === target) || target === 'master';
+                        if (!sourceExists) {
+                            warnings.push(`Connection ${index}: Source "${source}" not found in audioGraph`);
+                        }
+                        if (!targetExists) {
+                            warnings.push(`Connection ${index}: Target "${target}" not found in audioGraph`);
+                        }
+                    }
                 }
             });
         }
@@ -975,6 +1150,16 @@ class jmonTone {
     }
 
     /**
+     * Parse musical time string to seconds (public method)
+     * @param {string} timeString - Musical time notation (e.g., "1:2:0", "4n", "2m")
+     * @param {number} bpm - Beats per minute for conversion
+     * @returns {number} Time in seconds
+     */
+    static parseTimeString(timeString, bpm = 120) {
+        return this._parseTimeString(timeString, bpm);
+    }
+
+    /**
      * Parse musical time string to seconds (helper function)
      * @param {string} timeString - Musical time notation (e.g., "1:2:0", "4n", "2m")
      * @param {number} bpm - Beats per minute for conversion
@@ -1018,17 +1203,18 @@ class jmonTone {
                 }
             }
             
-            // Handle bar:beat:subdivision format (e.g., "1:2:0")
+            // Enhanced bars:beats:ticks format (e.g., "2:1:240")
             if (timeString.includes(':')) {
                 const parts = timeString.split(':').map(p => parseFloat(p));
                 const bars = parts[0] || 0;
                 const beats = parts[1] || 0;
-                const subdivisions = parts[2] || 0;
+                const ticks = parts[2] || 0;
                 
-                const beatLength = 60 / bpm;
+                const beatLength = 60 / bpm; // seconds per beat
                 const barLength = beatLength * 4; // Assuming 4/4 time
+                const tickLength = beatLength / 480; // Standard MIDI ticks per quarter note
                 
-                return bars * barLength + beats * beatLength + subdivisions * (beatLength / 4);
+                return bars * barLength + beats * beatLength + ticks * tickLength;
             }
             
             // Try parsing as a number
@@ -1273,20 +1459,22 @@ class jmonTone {
 
     /**
      * Play a JMON composition using Tone.js, applying converterHints for modulation.
-     * @param {Object} composition - JMON composition with synthConfig and converterHints
+     * @param {Object} composition - JMON composition with synthConfig and converterHints (or any compatible format)
      */
     static async playComposition(composition) {
+        // Smart normalize: convert various formats to jmon
+        const normalizedComposition = this.normalize(composition);
         await Tone.start();
         console.log(`Tone.js started successfully, context state: ${Tone.context.state}`);
         
-        const { synthConfig = {}, converterHints = {} } = composition;
+        const { synthConfig = {}, converterHints = {} } = normalizedComposition;
         const toneHints = converterHints.tone || {};
         
         // Create a map of synths based on audioGraph nodes
         const synthMap = new Map();
         
         // Process audioGraph to create individual synths
-        for (const node of composition.audioGraph || []) {
+        for (const node of normalizedComposition.audioGraph || []) {
             if (node.type === 'Sampler' && node.options?.urls) {
                 console.log(`Creating Sampler: ${node.id}`);
                 
@@ -1416,7 +1604,7 @@ class jmonTone {
         // Create effects from audioGraph
         const effectsMap = new Map();
         
-        for (const node of composition.audioGraph || []) {
+        for (const node of normalizedComposition.audioGraph || []) {
             if (this.isEffectNode(node.type)) {
                 console.log(`Creating effect: ${node.id} (${node.type})`);
                 const effect = this.createEffect(node.type, node.options || {});
@@ -1446,10 +1634,10 @@ class jmonTone {
         allNodes.set('master', Tone.getDestination());
         
         // Process connections from audioGraph
-        if (composition.connections && composition.connections.length > 0) {
-            console.log(`Processing ${composition.connections.length} audio connections`);
+        if (normalizedComposition.connections && normalizedComposition.connections.length > 0) {
+            console.log(`Processing ${normalizedComposition.connections.length} audio connections`);
             
-            composition.connections.forEach((connection, index) => {
+            normalizedComposition.connections.forEach((connection, index) => {
                 if (!Array.isArray(connection) || connection.length !== 2) {
                     console.warn(`Invalid connection ${index}: ${JSON.stringify(connection)}`);
                     return;
@@ -1485,7 +1673,7 @@ class jmonTone {
         const now = Tone.now();
         
         // Loop through sequences and notes
-        composition.sequences.forEach(seq => {
+        normalizedComposition.sequences.forEach(seq => {
             // Get the synth for this sequence
             const synth = synthMap.get(seq.synthRef);
             
@@ -1540,7 +1728,7 @@ class jmonTone {
                         try {
                             const cents = (bend.value / 8192) * 1200;
                             const bendTime = t0 + (typeof bend.time === 'string' ? 
-                                this._parseTimeString(bend.time, composition.bpm || 120) : bend.time);
+                                this._parseTimeString(bend.time, normalizedComposition.bpm || 120) : bend.time);
                             
                             console.log(`Pitch bend ${idx}: value=${bend.value}, cents=${cents.toFixed(1)}, time=${bend.time}`);
                             

@@ -8,34 +8,37 @@
 class JmonToSuperCollider {
     /**
      * Convert a jmon composition to SuperCollider code
-     * @param {Object} composition - jmon composition object
+     * @param {Object} composition - jmon composition object or any compatible format
      * @returns {string} SuperCollider script
      */
     static convertToSuperCollider(composition) {
-        // Validate jmon composition
-        if (!jmonTone.validate(composition).success) {
+        // Smart normalize: convert various formats to jmon
+        const normalizedComposition = jmonTone ? jmonTone.normalize(composition) : composition;
+        
+        // Validate normalized jmon composition
+        if (jmonTone && !jmonTone.validate(normalizedComposition).success) {
             throw new Error('Invalid jmon composition');
         }
 
         let sc = '';
         
         // Header comments
-        sc += this.generateHeader(composition);
+        sc += this.generateHeader(normalizedComposition);
         
         // Server setup and cleanup
         sc += this.generateServerSetup();
         
         // SynthDef definitions
-        sc += this.generateSynthDefs(composition);
+        sc += this.generateSynthDefs(normalizedComposition);
         
         // Effects definitions
-        sc += this.generateEffectDefs(composition);
+        sc += this.generateEffectDefs(normalizedComposition);
         
         // Pattern definitions
-        sc += this.generatePatterns(composition);
+        sc += this.generatePatterns(normalizedComposition);
         
         // Main execution block
-        sc += this.generateMainExecution(composition);
+        sc += this.generateMainExecution(normalizedComposition);
         
         return sc;
     }
@@ -64,6 +67,31 @@ class JmonToSuperCollider {
         header += `// Tempo: ${composition.bpm || 120} BPM\n`;
         header += `// Key: ${composition.keySignature || 'C'}\n`;
         header += `// Time Signature: ${composition.timeSignature || '4/4'}\n`;
+        
+        // Add tempo changes if present
+        if (composition.tempoMap && composition.tempoMap.length > 0) {
+            header += `// Tempo changes: ${composition.tempoMap.length} points\n`;
+        }
+        
+        // Add key changes if present
+        if (composition.keySignatureMap && composition.keySignatureMap.length > 0) {
+            header += `// Key changes: ${composition.keySignatureMap.length} points\n`;
+        }
+        
+        // Add audio graph info
+        if (composition.audioGraph && composition.audioGraph.length > 0) {
+            header += `// Audio nodes: ${composition.audioGraph.length}\n`;
+        }
+        
+        // Add automation info
+        if (composition.automation) {
+            const globalChannels = composition.automation.global?.length || 0;
+            const sequenceChannels = Object.keys(composition.automation.sequences || {}).length;
+            if (globalChannels > 0 || sequenceChannels > 0) {
+                header += `// Automation: ${globalChannels} global + ${sequenceChannels} sequence channels\n`;
+            }
+        }
+        
         header += `\n`;
         
         return header;
@@ -447,9 +475,9 @@ s.waitForBoot({
         // Sort notes by time
         const sortedNotes = [...sequence.notes].sort((a, b) => {
             const timeA = typeof a.time === 'string' ? 
-                jmonTone._parseTimeString(a.time, composition.bpm || 120) : a.time;
+                jmonTone.parseTimeString(a.time, composition.bpm || 120) : a.time;
             const timeB = typeof b.time === 'string' ? 
-                jmonTone._parseTimeString(b.time, composition.bpm || 120) : b.time;
+                jmonTone.parseTimeString(b.time, composition.bpm || 120) : b.time;
             return timeA - timeB;
         });
 
@@ -462,9 +490,9 @@ s.waitForBoot({
         
         sortedNotes.forEach(note => {
             const noteTime = typeof note.time === 'string' ? 
-                jmonTone._parseTimeString(note.time, composition.bpm || 120) : note.time;
+                jmonTone.parseTimeString(note.time, composition.bpm || 120) : note.time;
             const duration = typeof note.duration === 'string' ? 
-                jmonTone._parseTimeString(note.duration, composition.bpm || 120) : note.duration;
+                jmonTone.parseTimeString(note.duration, composition.bpm || 120) : note.duration;
             
             // Add rest if needed
             if (noteTime > lastTime) {
@@ -504,7 +532,8 @@ s.waitForBoot({
         // Add modulation parameters if present
         const hasModulations = sequence.notes.some(note => note.modulations && note.modulations.length > 0);
         if (hasModulations) {
-            pattern += `        // Note: Modulations require additional parameter automation\n`;
+            pattern += `        // Note: Modulations supported (MIDI CC, pitch bend, aftertouch)\n`;
+            pattern += `        // TODO: Implement real-time parameter control for modulations\n`;
         }
         
         pattern += `    );\n\n`;
