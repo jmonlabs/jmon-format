@@ -1,48 +1,13 @@
 /**
- * jmon-setup.js - Complete JMON ecosystem setup for Observable
+ * jmon-setup-fixed.js - Fixed JMON ecosystem setup for Observable
  * 
- * Imports and initializes:
- * - Tone.js for audio
- * - djalgojs as {dj, viz} 
- * - All JMON utilities (tone, abc, midi, supercollider)
- * - Clean Observable widgets
- * 
- * Single import for everything you need.
+ * Properly loads all modules and handles different export patterns
  */
-
-// Dynamic import helper
-async function loadModule(url) {
-    try {
-        if (url.endsWith('.js') && !url.includes('://')) {
-            // Relative path, make it absolute to GitHub
-            url = `https://cdn.jsdelivr.net/gh/jmonlabs/jmon-format@main/${url}`;
-        }
-        const response = await fetch(url);
-        const code = await response.text();
-        
-        // Create module environment
-        const module = { exports: {} };
-        const exports = module.exports;
-        const require = (name) => {
-            if (name === 'tone') return window.Tone;
-            throw new Error(`Module ${name} not found`);
-        };
-        
-        // Execute module code
-        const func = new Function('module', 'exports', 'require', 'window', 'global', 'globalThis', code);
-        func(module, exports, require, window, window, window);
-        
-        return module.exports.default || module.exports || window[Object.keys(window).pop()];
-    } catch (error) {
-        console.warn(`Failed to load ${url}:`, error);
-        return null;
-    }
-}
 
 // Load external CDN script
 async function loadScript(url, globalName) {
     return new Promise((resolve, reject) => {
-        if (window[globalName]) {
+        if (typeof window !== 'undefined' && window[globalName]) {
             resolve(window[globalName]);
             return;
         }
@@ -55,6 +20,34 @@ async function loadScript(url, globalName) {
     });
 }
 
+// Load JMON module with proper handling
+async function loadJmonModule(filename) {
+    try {
+        const url = `https://cdn.jsdelivr.net/gh/jmonlabs/jmon-format@main/${filename}`;
+        const response = await fetch(url);
+        const code = await response.text();
+        
+        // Execute in global context to set window variables
+        const script = document.createElement('script');
+        script.textContent = code;
+        document.head.appendChild(script);
+        
+        // Give it time to execute
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        // Return the expected global variable
+        if (filename === 'jmon-tone.js') return window.jmonTone;
+        if (filename === 'jmon-abc.js') return window.JmonToAbc;
+        if (filename === 'jmon-midi.js') return window.JmonToMidi;
+        if (filename === 'jmon-supercollider.js') return window.JmonToSuperCollider;
+        
+        return null;
+    } catch (error) {
+        console.warn(`Failed to load ${filename}:`, error);
+        return null;
+    }
+}
+
 // Main setup function
 export async function setup() {
     console.log('🎵 Setting up JMON ecosystem...');
@@ -65,54 +58,61 @@ export async function setup() {
         // 1. Load Tone.js
         console.log('📦 Loading Tone.js...');
         results.Tone = await loadScript('https://unpkg.com/tone@15.1.22/build/Tone.js', 'Tone');
+        window.Tone = results.Tone; // Ensure it's globally available
         console.log('✅ Tone.js loaded');
         
-        // 2. Load djalgojs and extract dj, viz
+        // 2. Load ABC.js for score rendering
+        console.log('📦 Loading ABC.js...');
+        try {
+            results.ABCJS = await loadScript('https://unpkg.com/abcjs@6/dist/abcjs-basic-min.js', 'ABCJS');
+            console.log('✅ ABC.js loaded');
+        } catch (e) {
+            console.warn('⚠️ ABC.js not loaded, scores will show as text');
+            results.ABCJS = null;
+        }
+        
+        // 3. Load djalgojs
         console.log('📦 Loading djalgojs...');
         try {
             const djalgoModule = await loadScript('https://unpkg.com/djalgojs@latest/dist/djalgojs.min.js', 'djalgojs');
             results.dj = djalgoModule;
-            results.viz = djalgoModule; // Same module, different alias for visualization functions
+            results.viz = djalgoModule; // Same module, different alias
             console.log('✅ djalgojs loaded as {dj, viz}');
         } catch (e) {
             console.warn('⚠️ djalgojs not available, continuing without it');
-            results.dj = null;
-            results.viz = null;
+            results.dj = {};
+            results.viz = {};
         }
         
-        // 3. Load JMON core utilities
+        // 4. Load JMON modules
         console.log('📦 Loading JMON utilities...');
         
-        // Load jmon-tone.js
-        results.jmonTone = await loadModule('jmon-tone.js');
-        console.log('✅ jmon-tone.js loaded');
+        results.jmonTone = await loadJmonModule('jmon-tone.js');
+        console.log(results.jmonTone ? '✅ jmon-tone.js loaded' : '❌ jmon-tone.js failed');
         
-        // Load jmon-abc.js  
-        results.jmonAbc = await loadModule('jmon-abc.js');
-        console.log('✅ jmon-abc.js loaded');
+        results.jmonAbc = await loadJmonModule('jmon-abc.js');
+        console.log(results.jmonAbc ? '✅ jmon-abc.js loaded' : '❌ jmon-abc.js failed');
         
-        // Load jmon-midi.js
-        results.jmonMidi = await loadModule('jmon-midi.js');
-        console.log('✅ jmon-midi.js loaded');
+        results.jmonMidi = await loadJmonModule('jmon-midi.js');
+        console.log(results.jmonMidi ? '✅ jmon-midi.js loaded' : '❌ jmon-midi.js failed');
         
-        // Load jmon-supercollider.js
-        results.jmonSuperCollider = await loadModule('jmon-supercollider.js');
-        console.log('✅ jmon-supercollider.js loaded');
+        results.jmonSuperCollider = await loadJmonModule('jmon-supercollider.js');
+        console.log(results.jmonSuperCollider ? '✅ jmon-supercollider.js loaded' : '❌ jmon-supercollider.js failed');
         
-        // 4. Initialize Tone.js context
+        // 5. Initialize Tone.js context
         if (results.Tone && results.Tone.context.state !== 'running') {
             await results.Tone.start();
             console.log('✅ Tone.js context started');
         }
         
-        // 5. Create convenience functions using the loaded utilities
+        // 6. Create convenience functions
         results.show = createShowFunction(results);
         results.play = createPlayFunction(results);
         results.display = createDisplayFunction(results);
         results.export = createExportFunctions(results);
         
         console.log('🎉 JMON ecosystem ready!');
-        console.log('📋 Available:', Object.keys(results));
+        console.log('📋 Available modules:', Object.keys(results).filter(k => results[k]));
         
         return results;
         
@@ -122,7 +122,7 @@ export async function setup() {
     }
 }
 
-// Create show function using loaded ABC converter
+// Create show function
 function createShowFunction(modules) {
     return function show(composition, options = {}) {
         const {
@@ -168,15 +168,38 @@ function createShowFunction(modules) {
                 container.appendChild(titleDiv);
             }
 
-            // Convert to ABC
+            // Create content area
+            const contentDiv = document.createElement('div');
+            
+            // Try ABC.js rendering first
+            if (modules.ABCJS && modules.jmonAbc) {
+                try {
+                    const abc = modules.jmonAbc.convertToAbc(normalized);
+                    const renderId = `abc-render-${Date.now()}`;
+                    contentDiv.innerHTML = `<div id="${renderId}"></div>`;
+                    container.appendChild(contentDiv);
+                    
+                    // Render with ABC.js
+                    modules.ABCJS.renderAbc(renderId, abc, {
+                        responsive: 'resize',
+                        staffwidth: width - 40,
+                        scale: 0.8
+                    });
+                    
+                    return container;
+                } catch (e) {
+                    console.warn('ABC.js rendering failed, falling back to text:', e);
+                }
+            }
+            
+            // Fallback to text display
             let content = '';
-            if (modules.jmonAbc && modules.jmonAbc.convertToAbc) {
+            if (modules.jmonAbc) {
                 content = modules.jmonAbc.convertToAbc(normalized);
             } else {
                 content = JSON.stringify(normalized, null, 2);
             }
 
-            // Display content
             const pre = document.createElement('pre');
             pre.textContent = content;
             pre.style.cssText = `
@@ -192,8 +215,14 @@ function createShowFunction(modules) {
                 overflow: auto;
                 max-height: 400px;
             `;
-            container.appendChild(pre);
-
+            contentDiv.appendChild(pre);
+            
+            // Add helper text
+            const helper = document.createElement('div');
+            helper.innerHTML = '<small style="color: #6b7280; margin-top: 8px; display: block;">📝 ABC notation • Copy/paste into <a href="https://editor.drawthedots.com/" target="_blank" style="color: #3b82f6;">ABC editor</a> for rendering</small>';
+            contentDiv.appendChild(helper);
+            
+            container.appendChild(contentDiv);
             return container;
 
         } catch (error) {
@@ -202,7 +231,7 @@ function createShowFunction(modules) {
     };
 }
 
-// Create play function using loaded Tone.js
+// Create play function
 function createPlayFunction(modules) {
     return function play(composition, options = {}) {
         const {
@@ -373,7 +402,7 @@ function createDisplayFunction(modules) {
     };
 }
 
-// Create export functions for different formats
+// Create export functions
 function createExportFunctions(modules) {
     return {
         toMidi: (composition, filename) => {
