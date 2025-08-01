@@ -15,6 +15,37 @@
         return;
     }
 
+/**
+ * Note: JmonPlayer class has been moved to a separate repository for better modularity.
+ * For advanced playback features, use JmonPlayer from the jmon-daw package.
+ * 
+ * Basic playback functionality remains available through jmonTone.playComposition()
+ */
+
+/**
+ * Helper function to create synths
+ */
+jmonTone.createSynth = function(type, options = {}) {
+    try {
+        switch (type) {
+            case 'Synth': return new Tone.Synth(options);
+            case 'PolySynth': return new Tone.PolySynth(options);
+            case 'MonoSynth': return new Tone.MonoSynth(options);
+            case 'AMSynth': return new Tone.AMSynth(options);
+            case 'FMSynth': return new Tone.FMSynth(options);
+            case 'DuoSynth': return new Tone.DuoSynth(options);
+            case 'PluckSynth': return new Tone.PluckSynth(options);
+            case 'NoiseSynth': return new Tone.NoiseSynth(options);
+            default:
+                console.warn(`Unknown synth type: ${type}, using Synth`);
+                return new Tone.Synth(options);
+        }
+    } catch (error) {
+        console.error(`Error creating ${type}:`, error);
+        return new Tone.Synth(); // Fallback
+    }
+};
+
 class jmonTone {
     static VERSION = "1.0";
     static FORMAT_IDENTIFIER = "jmonTone";
@@ -1458,10 +1489,29 @@ class jmonTone {
     }
 
     /**
-     * Play a JMON composition using Tone.js, applying converterHints for modulation.
+     * Create a controllable player for a JMON composition
+     * @param {Object} composition - JMON composition (or any compatible format)
+     * @returns {Object} Player object with play/stop/pause controls
+     */
+    static createPlayer(composition) {
+        return new JmonPlayer(composition);
+    }
+
+    /**
+     * Play a JMON composition using Tone.js (simple one-shot playback)
      * @param {Object} composition - JMON composition with synthConfig and converterHints (or any compatible format)
      */
     static async playComposition(composition) {
+        const player = this.createPlayer(composition);
+        await player.play();
+        return player;
+    }
+
+    /**
+     * Legacy play method - kept for backward compatibility
+     * @param {Object} composition - JMON composition with synthConfig and converterHints (or any compatible format)
+     */
+    static async _playCompositionLegacy(composition) {
         // Smart normalize: convert various formats to jmon
         const normalizedComposition = this.normalize(composition);
         await Tone.start();
