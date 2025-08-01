@@ -5,13 +5,15 @@ Simple integration for displaying and playing JMON compositions in Observable no
 ## Setup
 
 ```javascript
-// Load dependencies
+// Load Tone.js first (required for playback)
+Tone = require("tone@15")
+
+// Load JMON libraries
 jmonTone = require("https://raw.githubusercontent.com/your-repo/jmon-format/main/jmon-tone.js")
 jmonAbc = require("https://raw.githubusercontent.com/your-repo/jmon-format/main/jmon-abc.js") 
 jmonObservable = require("https://raw.githubusercontent.com/your-repo/jmon-format/main/jmon-observable.js")
 
-// Load Tone.js and ABC.js
-Tone = require("tone@15")
+// Optional: Load ABC.js for better score rendering
 abcjs = require("abcjs@6")
 ```
 

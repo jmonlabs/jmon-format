@@ -207,7 +207,22 @@ export function play(composition, options = {}) {
                 status.textContent = 'Playing...';
                 isPlaying = true;
 
-                // Normalize and use jmonTone for playback
+                // Ensure Tone.js is available
+                let Tone;
+                if (typeof window !== 'undefined' && window.Tone) {
+                    Tone = window.Tone;
+                } else if (typeof globalThis !== 'undefined' && globalThis.Tone) {
+                    Tone = globalThis.Tone;
+                } else {
+                    throw new Error('Tone.js not loaded. Import with: Tone = require("tone")');
+                }
+
+                // Start Tone.js context if needed
+                if (Tone.context.state !== 'running') {
+                    await Tone.start();
+                }
+
+                // Use jmonTone for playback
                 if (typeof jmonTone !== 'undefined') {
                     await jmonTone.playComposition(composition);
                 } else if (typeof window !== 'undefined' && window.jmonTone) {
