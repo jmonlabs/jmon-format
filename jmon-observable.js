@@ -24,8 +24,19 @@ export function show(composition, options = {}) {
     } = options;
 
     try {
+        // Normalize composition first (handles all formats)
+        let normalizedComposition;
+        if (typeof jmonTone !== 'undefined' && jmonTone.normalize) {
+            normalizedComposition = jmonTone.normalize(composition);
+        } else if (typeof window !== 'undefined' && window.jmonTone && window.jmonTone.normalize) {
+            normalizedComposition = window.jmonTone.normalize(composition);
+        } else {
+            // Fallback: assume it's already normalized
+            normalizedComposition = composition;
+        }
+        
         // Convert to ABC notation
-        const abc = JmonToAbc.convertToAbc(composition);
+        const abc = JmonToAbc.convertToAbc(normalizedComposition);
         
         // Create container
         const container = document.createElement('div');
@@ -40,9 +51,10 @@ export function show(composition, options = {}) {
         `;
 
         // Add title if enabled
-        if (title && composition.metadata?.name) {
+        if (title) {
+            const titleText = normalizedComposition.metadata?.name || 'JMON Composition';
             const titleEl = document.createElement('h3');
-            titleEl.textContent = composition.metadata.name;
+            titleEl.textContent = titleText;
             titleEl.style.cssText = 'margin: 0 0 15px 0; color: #333;';
             container.appendChild(titleEl);
         }
@@ -130,15 +142,16 @@ export function play(composition, options = {}) {
 
         // Title
         if (showTitle) {
-            const title = document.createElement('div');
-            title.textContent = composition.metadata?.name || composition.title || 'JMON Composition';
-            title.style.cssText = `
+            const titleText = composition.metadata?.name || 'JMON Composition';
+            const titleEl = document.createElement('div');
+            titleEl.textContent = titleText;
+            titleEl.style.cssText = `
                 font-weight: 600;
                 font-size: 14px;
                 margin-bottom: 10px;
                 color: ${textColor};
             `;
-            widget.appendChild(title);
+            widget.appendChild(titleEl);
         }
 
         // Controls
@@ -194,9 +207,11 @@ export function play(composition, options = {}) {
                 status.textContent = 'Playing...';
                 isPlaying = true;
 
-                // Use jmonTone for playback
+                // Normalize and use jmonTone for playback
                 if (typeof jmonTone !== 'undefined') {
                     await jmonTone.playComposition(composition);
+                } else if (typeof window !== 'undefined' && window.jmonTone) {
+                    await window.jmonTone.playComposition(composition);
                 } else {
                     throw new Error('jmonTone library not loaded');
                 }
