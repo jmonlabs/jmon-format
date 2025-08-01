@@ -1,181 +1,305 @@
 /**
- * jmon-setup-simple.js - Simple JMON ecosystem setup for Observable
+ * jmon-setup.js - Single-cell JMON ecosystem setup for Observable
  * 
- * Just loads existing modules and exposes their existing functionality.
- * No duplication, uses what's already implemented.
+ * Usage in Observable:
+ * 
+ * jmon = {
+ *   // Load script and return global variable
+ *   const loadScript = async (url, globalName) => {
+ *     // Check if already loaded
+ *     if (window[globalName]) return window[globalName];
+ *     
+ *     const script = document.createElement('script');
+ *     script.src = url;
+ *     script.crossOrigin = 'anonymous';
+ *     document.head.appendChild(script);
+ *     
+ *     await new Promise((resolve, reject) => {
+ *       script.onload = () => setTimeout(resolve, 300);
+ *       script.onerror = reject;
+ *     });
+ *     
+ *     return window[globalName] || null;
+ *   };
+ *   
+ *   // Load all dependencies using script tags
+ *   const [Tone, ABCJS, dj, jmonTone, jmonAbc] = await Promise.all([
+ *     loadScript('https://unpkg.com/tone@15.1.22/build/Tone.js', 'Tone'),
+ *     loadScript('https://unpkg.com/abcjs@6/dist/abcjs-basic-min.js', 'ABCJS'),
+ *     loadScript('https://cdn.jsdelivr.net/gh/jmonlabs/djalgojs@main/dist/djalgojs.js', 'djalgojs'),
+ *     loadScript('https://cdn.jsdelivr.net/gh/jmonlabs/jmon-format@main/jmon-tone.js', 'jmonTone'),
+ *     loadScript('https://cdn.jsdelivr.net/gh/jmonlabs/jmon-format@main/jmon-abc.js', 'JmonToAbc')
+ *   ]);
+ *   
+ *   // Initialize Tone.js if available
+ *   if (Tone && Tone.context && Tone.context.state !== 'running') {
+ *     await Tone.start();
+ *   }
+ *   
+ *   // Create API functions using existing JMON utilities
+ *   const show = function(composition, options = {}) {
+ *     const container = document.createElement('div');
+ *     container.style.cssText = `
+ *       padding: 16px; border: 1px solid #d1d5db; border-radius: 8px;
+ *       background: white; font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+ *       margin: 8px 0;
+ *     `;
+ *     
+ *     try {
+ *       const normalized = jmonTone?.normalize ? jmonTone.normalize(composition) : composition;
+ *       
+ *       if (normalized.metadata?.name) {
+ *         const title = document.createElement('h3');
+ *         title.textContent = normalized.metadata.name;
+ *         title.style.cssText = 'margin: 0 0 12px 0; font-size: 16px;';
+ *         container.appendChild(title);
+ *       }
+ *       
+ *       const content = jmonAbc?.convertToAbc ? 
+ *         jmonAbc.convertToAbc(normalized) : 
+ *         JSON.stringify(normalized, null, 2);
+ *       
+ *       const pre = document.createElement('pre');
+ *       pre.textContent = content;
+ *       pre.style.cssText = `
+ *         background: #f8fafc; padding: 12px; border-radius: 6px;
+ *         font-size: 11px; font-family: monospace; overflow: auto;
+ *         max-height: 300px; margin: 0;
+ *       `;
+ *       container.appendChild(pre);
+ *       
+ *     } catch (error) {
+ *       container.innerHTML = `<strong>Error:</strong> ${error.message}`;
+ *       container.style.color = '#dc2626';
+ *     }
+ *     
+ *     return container;
+ *   };
+ *   
+ *   const play = function(composition, options = {}) {
+ *     const container = document.createElement('div');
+ *     container.style.cssText = `
+ *       padding: 16px; border: 1px solid #d1d5db; border-radius: 8px;
+ *       background: white; font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+ *       margin: 8px 0; display: flex; align-items: center; gap: 12px;
+ *     `;
+ *     
+ *     try {
+ *       const normalized = jmonTone?.normalize ? jmonTone.normalize(composition) : composition;
+ *       
+ *       const title = document.createElement('div');
+ *       title.textContent = normalized.metadata?.name || 'JMON Composition';
+ *       title.style.cssText = 'font-weight: 500; flex: 1;';
+ *       container.appendChild(title);
+ *       
+ *       const playBtn = document.createElement('button');
+ *       playBtn.innerHTML = '▶️ Play';
+ *       playBtn.style.cssText = `
+ *         background: #3b82f6; color: white; border: none;
+ *         padding: 8px 16px; border-radius: 6px; cursor: pointer;
+ *       `;
+ *       
+ *       const status = document.createElement('span');
+ *       status.textContent = (Tone && jmonTone) ? 'Ready' : 'Audio not available';
+ *       status.style.cssText = 'font-size: 12px; color: #6b7280;';
+ *       
+ *       playBtn.onclick = async () => {
+ *         if (!Tone || !jmonTone) {
+ *           status.textContent = 'Audio not available';
+ *           return;
+ *         }
+ *         
+ *         try {
+ *           playBtn.disabled = true;
+ *           status.textContent = 'Playing...';
+ *           await jmonTone.playComposition(composition);
+ *           status.textContent = 'Finished';
+ *         } catch (error) {
+ *           status.textContent = `Error: ${error.message}`;
+ *         } finally {
+ *           playBtn.disabled = false;
+ *         }
+ *       };
+ *       
+ *       container.appendChild(playBtn);
+ *       container.appendChild(status);
+ *       
+ *     } catch (error) {
+ *       container.innerHTML = `<strong>Error:</strong> ${error.message}`;
+ *       container.style.color = '#dc2626';
+ *     }
+ *     
+ *     return container;
+ *   };
+ *   
+ *   const display = function(composition, options = {}) {
+ *     const container = document.createElement('div');
+ *     container.style.cssText = 'display: flex; flex-direction: column; gap: 16px;';
+ *     container.appendChild(show(composition, options));
+ *     container.appendChild(play(composition, options));
+ *     return container;
+ *   };
+ *   
+ *   return {
+ *     Tone, ABCJS, dj, viz: dj,
+ *     jmonTone, jmonAbc,
+ *     show, play, display
+ *   };
+ * }
+ * 
+ * Then use: jmon.show(composition), jmon.play(composition), jmon.display(composition)
  */
 
-// Load external CDN script
+// Load external script and return global variable
 async function loadScript(url, globalName) {
-    return new Promise((resolve, reject) => {
-        if (typeof window !== 'undefined' && window[globalName]) {
-            resolve(window[globalName]);
-            return;
-        }
-        
-        const script = document.createElement('script');
-        script.src = url;
-        script.onload = () => resolve(window[globalName]);
-        script.onerror = reject;
-        document.head.appendChild(script);
-    });
-}
-
-// Load JMON module by executing it and getting the global
-async function loadJmonModule(url, globalName) {
-    try {
-        const response = await fetch(url);
-        const code = await response.text();
-        
-        // Execute in global context
-        const script = document.createElement('script');
-        script.textContent = code;
-        document.head.appendChild(script);
-        
-        // Wait for execution
-        await new Promise(resolve => setTimeout(resolve, 100));
-        
+    // Check if already loaded
+    if (typeof window !== 'undefined' && window[globalName]) {
         return window[globalName];
-    } catch (error) {
-        console.warn(`Failed to load ${url}:`, error);
-        return null;
     }
+    
+    const script = document.createElement('script');
+    script.src = url;
+    script.crossOrigin = 'anonymous';
+    document.head.appendChild(script);
+    
+    await new Promise((resolve, reject) => {
+        script.onload = () => setTimeout(resolve, 300);
+        script.onerror = reject;
+    });
+    
+    return window[globalName] || null;
 }
 
 // Main setup function
 export async function setup() {
     console.log('🎵 Setting up JMON ecosystem...');
     
-    const results = {};
-    
     try {
-        // 1. Load Tone.js
-        console.log('📦 Loading Tone.js...');
-        try {
-            results.Tone = await loadScript("https://unpkg.com/tone@15.1.22/build/Tone.js", 'Tone');
-            window.Tone = results.Tone;
-            console.log('✅ Tone.js loaded');
-        } catch (e) {
-            console.warn('⚠️ Tone.js failed, trying alternative...');
+        // Load all dependencies using script tags
+        const [Tone, ABCJS, dj, jmonTone, jmonAbc] = await Promise.all([
+            loadScript('https://unpkg.com/tone@15.1.22/build/Tone.js', 'Tone'),
+            loadScript('https://unpkg.com/abcjs@6/dist/abcjs-basic-min.js', 'ABCJS'),
+            loadScript('https://cdn.jsdelivr.net/gh/jmonlabs/djalgojs@main/dist/djalgojs.js', 'djalgojs'),
+            loadScript('https://cdn.jsdelivr.net/gh/jmonlabs/jmon-format@main/jmon-tone.js', 'jmonTone'),
+            loadScript('https://cdn.jsdelivr.net/gh/jmonlabs/jmon-format@main/jmon-abc.js', 'JmonToAbc')
+        ]);
+        
+        // Initialize Tone.js if available
+        if (Tone && Tone.context && Tone.context.state !== 'running') {
+            await Tone.start();
+        }
+        
+        // Create API functions using existing JMON utilities
+        const show = function(composition, options = {}) {
+            const container = document.createElement('div');
+            container.style.cssText = `
+                padding: 16px; border: 1px solid #d1d5db; border-radius: 8px;
+                background: white; font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+                margin: 8px 0;
+            `;
+            
             try {
-                results.Tone = await loadScript("https://cdn.skypack.dev/tone@latest", 'Tone');
-                window.Tone = results.Tone;
-                console.log('✅ Tone.js loaded (alternative)');
-            } catch (e2) {
-                console.warn('⚠️ Tone.js not available');
-                results.Tone = null;
+                const normalized = jmonTone?.normalize ? jmonTone.normalize(composition) : composition;
+                
+                if (normalized.metadata?.name) {
+                    const title = document.createElement('h3');
+                    title.textContent = normalized.metadata.name;
+                    title.style.cssText = 'margin: 0 0 12px 0; font-size: 16px;';
+                    container.appendChild(title);
+                }
+                
+                const content = jmonAbc?.convertToAbc ? 
+                    jmonAbc.convertToAbc(normalized) : 
+                    JSON.stringify(normalized, null, 2);
+                
+                const pre = document.createElement('pre');
+                pre.textContent = content;
+                pre.style.cssText = `
+                    background: #f8fafc; padding: 12px; border-radius: 6px;
+                    font-size: 11px; font-family: monospace; overflow: auto;
+                    max-height: 300px; margin: 0;
+                `;
+                container.appendChild(pre);
+                
+            } catch (error) {
+                container.innerHTML = `<strong>Error:</strong> ${error.message}`;
+                container.style.color = '#dc2626';
             }
-        }
+            
+            return container;
+        };
         
-        // 2. Load ABC.js
-        console.log('📦 Loading ABC.js...');
-        try {
-            results.ABCJS = await loadScript('https://unpkg.com/abcjs@6/dist/abcjs-basic-min.js', 'ABCJS');
-            console.log('✅ ABC.js loaded');
-        } catch (e) {
-            console.warn('⚠️ ABC.js not loaded, scores will show as text');
-            results.ABCJS = null;
-        }
-        
-        // 3. Load djalgojs
-        console.log('📦 Loading djalgojs...');
-        try {
-            // Try different possible URLs for djalgojs
-            let djalgoModule = null;
+        const play = function(composition, options = {}) {
+            const container = document.createElement('div');
+            container.style.cssText = `
+                padding: 16px; border: 1px solid #d1d5db; border-radius: 8px;
+                background: white; font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+                margin: 8px 0; display: flex; align-items: center; gap: 12px;
+            `;
+            
             try {
-                djalgoModule = await loadScript('https://unpkg.com/djalgojs@latest/dist/djalgojs.min.js', 'djalgojs');
-            } catch (e1) {
-                try {
-                    djalgoModule = await loadScript('https://cdn.jsdelivr.net/npm/djalgojs@latest/dist/djalgojs.min.js', 'djalgojs');
-                } catch (e2) {
-                    djalgoModule = await loadScript('https://cdn.jsdelivr.net/gh/jmonlabs/djalgojs@main/dist/djalgojs.js', 'djalgojs');
-                }
+                const normalized = jmonTone?.normalize ? jmonTone.normalize(composition) : composition;
+                
+                const title = document.createElement('div');
+                title.textContent = normalized.metadata?.name || 'JMON Composition';
+                title.style.cssText = 'font-weight: 500; flex: 1;';
+                container.appendChild(title);
+                
+                const playBtn = document.createElement('button');
+                playBtn.innerHTML = '▶️ Play';
+                playBtn.style.cssText = `
+                    background: #3b82f6; color: white; border: none;
+                    padding: 8px 16px; border-radius: 6px; cursor: pointer;
+                `;
+                
+                const status = document.createElement('span');
+                status.textContent = (Tone && jmonTone) ? 'Ready' : 'Audio not available';
+                status.style.cssText = 'font-size: 12px; color: #6b7280;';
+                
+                playBtn.onclick = async () => {
+                    if (!Tone || !jmonTone) {
+                        status.textContent = 'Audio not available';
+                        return;
+                    }
+                    
+                    try {
+                        playBtn.disabled = true;
+                        status.textContent = 'Playing...';
+                        await jmonTone.playComposition(composition);
+                        status.textContent = 'Finished';
+                    } catch (error) {
+                        status.textContent = `Error: ${error.message}`;
+                    } finally {
+                        playBtn.disabled = false;
+                    }
+                };
+                
+                container.appendChild(playBtn);
+                container.appendChild(status);
+                
+            } catch (error) {
+                container.innerHTML = `<strong>Error:</strong> ${error.message}`;
+                container.style.color = '#dc2626';
             }
             
-            results.dj = djalgoModule;
-            results.viz = djalgoModule;
-            console.log('✅ djalgojs loaded as {dj, viz}');
-        } catch (e) {
-            console.warn('⚠️ djalgojs not available, continuing without it');
-            results.dj = null;
-            results.viz = null;
-        }
+            return container;
+        };
         
-        // 4. Load JMON modules
-        console.log('📦 Loading JMON utilities...');
-        
-        results.jmonTone = await loadJmonModule(
-            'https://cdn.jsdelivr.net/gh/jmonlabs/jmon-format@main/jmon-tone.js',
-            'jmonTone'
-        );
-        console.log(results.jmonTone ? '✅ jmon-tone.js loaded' : '❌ jmon-tone.js failed');
-        
-        results.jmonAbc = await loadJmonModule(
-            'https://cdn.jsdelivr.net/gh/jmonlabs/jmon-format@main/jmon-abc.js', 
-            'JmonToAbc'
-        );
-        console.log(results.jmonAbc ? '✅ jmon-abc.js loaded' : '❌ jmon-abc.js failed');
-        
-        results.jmonMidi = await loadJmonModule(
-            'https://cdn.jsdelivr.net/gh/jmonlabs/jmon-format@main/jmon-midi.js',
-            'JmonToMidi'
-        );
-        console.log(results.jmonMidi ? '✅ jmon-midi.js loaded' : '❌ jmon-midi.js failed');
-        
-        results.jmonSuperCollider = await loadJmonModule(
-            'https://cdn.jsdelivr.net/gh/jmonlabs/jmon-format@main/jmon-supercollider.js',
-            'JmonToSuperCollider'
-        );
-        console.log(results.jmonSuperCollider ? '✅ jmon-supercollider.js loaded' : '❌ jmon-supercollider.js failed');
-        
-        // Load jmon-observable.js for existing widgets
-        results.jmonObservable = await loadJmonModule(
-            'https://cdn.jsdelivr.net/gh/jmonlabs/jmon-format@main/jmon-observable.js',
-            'jmonObservable'
-        );
-        console.log(results.jmonObservable ? '✅ jmon-observable.js loaded' : '❌ jmon-observable.js failed');
-        
-        // 5. Initialize Tone.js context
-        if (results.Tone && results.Tone.context.state !== 'running') {
-            await results.Tone.start();
-            console.log('✅ Tone.js context started');
-        }
-        
-        // 6. Use existing functions from jmon-observable.js
-        if (results.jmonObservable) {
-            results.show = results.jmonObservable.show;
-            results.play = results.jmonObservable.play;
-            results.display = results.jmonObservable.display;
-        }
-        
-        // 7. Create export functions using existing converters
-        results.export = {
-            toMidi: (composition, filename) => {
-                if (results.jmonMidi && results.jmonMidi.convertAndDownload) {
-                    return results.jmonMidi.convertAndDownload(composition, filename);
-                }
-                throw new Error('MIDI export not available');
-            },
-            
-            toAbc: (composition, filename) => {
-                if (results.jmonAbc && results.jmonAbc.convertAndDownload) {
-                    return results.jmonAbc.convertAndDownload(composition, filename);
-                }
-                throw new Error('ABC export not available');
-            },
-            
-            toSuperCollider: (composition, filename) => {
-                if (results.jmonSuperCollider && results.jmonSuperCollider.convertAndDownload) {
-                    return results.jmonSuperCollider.convertAndDownload(composition, filename);
-                }
-                throw new Error('SuperCollider export not available');
-            }
+        const display = function(composition, options = {}) {
+            const container = document.createElement('div');
+            container.style.cssText = 'display: flex; flex-direction: column; gap: 16px;';
+            container.appendChild(show(composition, options));
+            container.appendChild(play(composition, options));
+            return container;
         };
         
         console.log('🎉 JMON ecosystem ready!');
-        console.log('📋 Available:', Object.keys(results).filter(k => results[k]));
         
-        return results;
+        return {
+            Tone, ABCJS, dj, viz: dj,
+            jmonTone, jmonAbc,
+            show, play, display
+        };
         
     } catch (error) {
         console.error('❌ Setup failed:', error);

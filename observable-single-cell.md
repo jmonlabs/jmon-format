@@ -4,29 +4,31 @@
 
 ```javascript
 jmon = {
-  // Load external dependencies using Observable's require
-  const [Tone, ABCJS, dj] = await Promise.all([
-    require("tone@15").catch(() => null),
-    require("abcjs@6").catch(() => null), 
-    require("djalgojs@latest").catch(() => null)
-  ]);
-  
-  // Load JMON modules
-  const loadJmonModule = async (url, globalName) => {
+  // Load script and return global variable
+  const loadScript = async (url, globalName) => {
+    // Check if already loaded
+    if (window[globalName]) return window[globalName];
+    
     const script = document.createElement('script');
     script.src = url;
+    script.crossOrigin = 'anonymous';
     document.head.appendChild(script);
     
-    await new Promise(resolve => {
-      script.onload = () => setTimeout(resolve, 200);
+    await new Promise((resolve, reject) => {
+      script.onload = () => setTimeout(resolve, 300);
+      script.onerror = reject;
     });
     
-    return window[globalName];
+    return window[globalName] || null;
   };
   
-  const [jmonTone, jmonAbc] = await Promise.all([
-    loadJmonModule('https://cdn.jsdelivr.net/gh/jmonlabs/jmon-format@main/jmon-tone.js', 'jmonTone'),
-    loadJmonModule('https://cdn.jsdelivr.net/gh/jmonlabs/jmon-format@main/jmon-abc.js', 'JmonToAbc')
+  // Load all dependencies using script tags
+  const [Tone, ABCJS, dj, jmonTone, jmonAbc] = await Promise.all([
+    loadScript('https://unpkg.com/tone@15.1.22/build/Tone.js', 'Tone'),
+    loadScript('https://unpkg.com/abcjs@6/dist/abcjs-basic-min.js', 'ABCJS'),
+    loadScript('https://cdn.jsdelivr.net/gh/jmonlabs/djalgojs@main/dist/djalgojs.js', 'djalgojs'),
+    loadScript('https://cdn.jsdelivr.net/gh/jmonlabs/jmon-format@main/jmon-tone.js', 'jmonTone'),
+    loadScript('https://cdn.jsdelivr.net/gh/jmonlabs/jmon-format@main/jmon-abc.js', 'JmonToAbc')
   ]);
   
   // Initialize Tone.js if available
