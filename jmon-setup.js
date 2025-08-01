@@ -51,14 +51,26 @@ export async function setup() {
     try {
         // 1. Load Tone.js
         console.log('📦 Loading Tone.js...');
-        results.Tone = await loadScript("https://cdn.skypack.dev/tone@latest", 'Tone');
-        window.Tone = results.Tone;
-        console.log('✅ Tone.js loaded');
+        try {
+            results.Tone = await loadScript("https://unpkg.com/tone@15.1.22/build/Tone.js", 'Tone');
+            window.Tone = results.Tone;
+            console.log('✅ Tone.js loaded');
+        } catch (e) {
+            console.warn('⚠️ Tone.js failed, trying alternative...');
+            try {
+                results.Tone = await loadScript("https://cdn.skypack.dev/tone@latest", 'Tone');
+                window.Tone = results.Tone;
+                console.log('✅ Tone.js loaded (alternative)');
+            } catch (e2) {
+                console.warn('⚠️ Tone.js not available');
+                results.Tone = null;
+            }
+        }
         
         // 2. Load ABC.js
         console.log('📦 Loading ABC.js...');
         try {
-            results.ABCJS = await loadScript('https://cdn.skypack.dev/abcjs@latest', 'ABCJS');
+            results.ABCJS = await loadScript('https://unpkg.com/abcjs@6/dist/abcjs-basic-min.js', 'ABCJS');
             console.log('✅ ABC.js loaded');
         } catch (e) {
             console.warn('⚠️ ABC.js not loaded, scores will show as text');
@@ -68,7 +80,18 @@ export async function setup() {
         // 3. Load djalgojs
         console.log('📦 Loading djalgojs...');
         try {
-            const djalgoModule = await loadScript('https://cdn.jsdelivr.net/gh/jmonlabs/djalgojs@main/dist/djalgojs.js', 'djalgojs');
+            // Try different possible URLs for djalgojs
+            let djalgoModule = null;
+            try {
+                djalgoModule = await loadScript('https://unpkg.com/djalgojs@latest/dist/djalgojs.min.js', 'djalgojs');
+            } catch (e1) {
+                try {
+                    djalgoModule = await loadScript('https://cdn.jsdelivr.net/npm/djalgojs@latest/dist/djalgojs.min.js', 'djalgojs');
+                } catch (e2) {
+                    djalgoModule = await loadScript('https://cdn.jsdelivr.net/gh/jmonlabs/djalgojs@main/dist/djalgojs.js', 'djalgojs');
+                }
+            }
+            
             results.dj = djalgoModule;
             results.viz = djalgoModule;
             console.log('✅ djalgojs loaded as {dj, viz}');
