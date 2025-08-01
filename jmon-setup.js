@@ -57,14 +57,14 @@ export async function setup() {
     try {
         // 1. Load Tone.js
         console.log('📦 Loading Tone.js...');
-        results.Tone = await loadScript('https://unpkg.com/tone@15.1.22/build/Tone.js', 'Tone');
+        results.Tone = await loadScript("https://cdn.skypack.dev/tone@latest", 'Tone');
         window.Tone = results.Tone; // Ensure it's globally available
         console.log('✅ Tone.js loaded');
         
         // 2. Load ABC.js for score rendering
         console.log('📦 Loading ABC.js...');
         try {
-            results.ABCJS = await loadScript('https://unpkg.com/abcjs@6/dist/abcjs-basic-min.js', 'ABCJS');
+            results.ABCJS = await loadScript('https://cdn.skypack.dev/abcjs@latest', 'ABCJS');
             console.log('✅ ABC.js loaded');
         } catch (e) {
             console.warn('⚠️ ABC.js not loaded, scores will show as text');
@@ -74,7 +74,7 @@ export async function setup() {
         // 3. Load djalgojs
         console.log('📦 Loading djalgojs...');
         try {
-            const djalgoModule = await loadScript('https://unpkg.com/djalgojs@latest/dist/djalgojs.min.js', 'djalgojs');
+            const djalgoModule = await loadScript('https://cdn.jsdelivr.net/gh/jmonlabs/djalgojs@main/dist/djalgojs.js', 'djalgojs');
             results.dj = djalgoModule;
             results.viz = djalgoModule; // Same module, different alias
             console.log('✅ djalgojs loaded as {dj, viz}');
@@ -87,16 +87,16 @@ export async function setup() {
         // 4. Load JMON modules
         console.log('📦 Loading JMON utilities...');
         
-        results.jmonTone = await loadJmonModule('jmon-tone.js');
+        results.jmonTone = await loadJmonModule('https://cdn.jsdelivr.net/gh/jmonlabs/jmon-format@main/jmon-tone.js');
         console.log(results.jmonTone ? '✅ jmon-tone.js loaded' : '❌ jmon-tone.js failed');
         
-        results.jmonAbc = await loadJmonModule('jmon-abc.js');
+        results.jmonAbc = await loadJmonModule('https://cdn.jsdelivr.net/gh/jmonlabs/jmon-format@main/jmon-abc.js');
         console.log(results.jmonAbc ? '✅ jmon-abc.js loaded' : '❌ jmon-abc.js failed');
         
-        results.jmonMidi = await loadJmonModule('jmon-midi.js');
+        results.jmonMidi = await loadJmonModule('https://cdn.jsdelivr.net/gh/jmonlabs/jmon-format@main/jmon-midi.js');
         console.log(results.jmonMidi ? '✅ jmon-midi.js loaded' : '❌ jmon-midi.js failed');
         
-        results.jmonSuperCollider = await loadJmonModule('jmon-supercollider.js');
+        results.jmonSuperCollider = await loadJmonModule('https://cdn.jsdelivr.net/gh/jmonlabs/jmon-format@main/jmon-supercollider.js');
         console.log(results.jmonSuperCollider ? '✅ jmon-supercollider.js loaded' : '❌ jmon-supercollider.js failed');
         
         // 5. Initialize Tone.js context
