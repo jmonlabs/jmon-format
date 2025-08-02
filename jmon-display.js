@@ -446,3 +446,7 @@ export function display(composition, options = {}) {
 if (typeof window !== 'undefined') {
     window.jmonDisplay = { show, play, display };
 }
+
+// ES Module export for Observable and modern bundlers
+export { show, play, display };
+export default { show, play, display };

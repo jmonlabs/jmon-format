@@ -2155,3 +2155,6 @@ if (typeof window !== 'undefined') {
 }
 
 })(typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : this);
+
+// ES Module export for Observable and modern bundlers
+export default jmonTone;
